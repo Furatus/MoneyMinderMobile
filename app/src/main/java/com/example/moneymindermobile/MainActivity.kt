@@ -6,15 +6,21 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.moneymindermobile.data.HttpClient
+import com.example.moneymindermobile.data.MainViewModel
+import com.example.moneymindermobile.ui.screens.HomeScreen
+import com.example.moneymindermobile.ui.screens.LoginScreen
+import com.example.moneymindermobile.ui.screens.RegistrationScreen
 import com.example.moneymindermobile.ui.theme.MoneyMinderMobileTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val viewModel = MainViewModel(httpClient = HttpClient)
         setContent {
             MoneyMinderMobileTheme {
                 // A surface container using the 'background' color from the theme
@@ -22,25 +28,20 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Greeting("Android")
+                    val navController = rememberNavController()
+                    NavHost(navController = navController, startDestination = routes.HOME) {
+                        composable(routes.HOME) {
+                            HomeScreen(viewModel = viewModel, navController = navController)
+                        }
+                        composable(routes.LOGIN) {
+                            LoginScreen(viewModel = viewModel, navController = navController)
+                        }
+                        composable(routes.REGISTER) {
+                            RegistrationScreen(viewModel = viewModel, navController = navController)
+                        }
+                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    MoneyMinderMobileTheme {
-        Greeting("Android")
     }
 }

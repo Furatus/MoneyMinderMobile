@@ -13,7 +13,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -31,15 +34,38 @@ import com.example.moneymindermobile.data.MainViewModel
 fun LoginScreen(viewModel: MainViewModel, navController: NavHostController) {
     val usernameState = rememberSaveable { mutableStateOf("") }
     val passwordState = rememberSaveable { mutableStateOf("") }
+
     val submitButtonClicked = rememberSaveable { mutableStateOf(false) }
     val registerButtonClicked = rememberSaveable { mutableStateOf(false) }
 
-    LoginScreenUI(usernameState, passwordState, submitButtonClicked, registerButtonClicked)
+    val submitButtonCounter = rememberSaveable { mutableIntStateOf(0) }
+    val registerButtonCounter = rememberSaveable { mutableIntStateOf(0) }
 
-    // You can access the text field values here
+    LoginScreenUI(
+        usernameState,
+        passwordState,
+        submitButtonClicked,
+        registerButtonClicked,
+        submitButtonCounter,
+        registerButtonCounter
+    )
+
     val username = usernameState.value
     val password = passwordState.value
-    // ...
+
+    LaunchedEffect(submitButtonCounter.intValue) {
+        if (submitButtonClicked.value) {
+            viewModel.signIn(password = password, username = username, rememberMe = false)
+            submitButtonClicked.value = false
+        }
+    }
+
+    LaunchedEffect(registerButtonCounter.intValue) {
+        if (registerButtonClicked.value){
+            println("register button clicked!")
+            submitButtonClicked.value = false
+        }
+    }
 }
 
 @Composable
@@ -48,6 +74,8 @@ fun LoginScreenUI(
     passwordState: MutableState<String>,
     submitButtonClicked: MutableState<Boolean>,
     registerButtonClicked: MutableState<Boolean>,
+    submitButtonCounter: MutableIntState,
+    registerButtonCounter: MutableIntState,
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -91,7 +119,10 @@ fun LoginScreenUI(
             visualTransformation = PasswordVisualTransformation()
         )
         Button(
-            onClick = { submitButtonClicked.value = true },
+            onClick = {
+                submitButtonClicked.value = true
+                submitButtonCounter.intValue++
+            },
             Modifier.padding(8.dp),
         ) {
             Text(
@@ -103,7 +134,10 @@ fun LoginScreenUI(
             text = "You don't already have an account?", Modifier.padding(16.dp)
         )
         Button(
-            onClick = { registerButtonClicked.value = true },
+            onClick = {
+                registerButtonClicked.value = true
+                registerButtonCounter.intValue++
+                      },
             Modifier.padding(8.dp),
         ) {
             Text(
@@ -120,8 +154,19 @@ fun LoginScreenUI(
 fun LoginScreenPreview() {
     val usernameState = rememberSaveable { mutableStateOf("") }
     val passwordState = rememberSaveable { mutableStateOf("") }
+
     val submitButtonClicked = rememberSaveable { mutableStateOf(false) }
     val registerButtonClicked = rememberSaveable { mutableStateOf(false) }
 
-    LoginScreenUI(usernameState, passwordState, submitButtonClicked, registerButtonClicked)
+    val submitButtonCounter = rememberSaveable { mutableIntStateOf(0) }
+    val registerButtonCounter = rememberSaveable { mutableIntStateOf(0) }
+
+    LoginScreenUI(
+        usernameState,
+        passwordState,
+        submitButtonClicked,
+        registerButtonClicked,
+        submitButtonCounter,
+        registerButtonCounter
+    )
 }

@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.jetbrainsKotlinAndroid)
     id("com.google.devtools.ksp") version "1.9.0-1.0.13"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.0"
-}
+    id("com.apollographql.apollo3").version("3.8.3")}
 
 android {
     namespace = "com.example.moneymindermobile"
@@ -82,8 +82,14 @@ dependencies {
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.client.logging)
 
-    //coil
+    // Coil
     implementation(libs.coil.compose)
+
+    // AppolloGraphQL
+    implementation("com.apollographql.apollo3:apollo-runtime:3.8.3")
+
+    // Cookie Jar
+    implementation ("com.squareup.okhttp3:okhttp-urlconnection:4.9.3")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -92,4 +98,10 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+}
+
+apollo{
+    service("moneyminder") {
+        packageName.set("com.example")
+    }
 }

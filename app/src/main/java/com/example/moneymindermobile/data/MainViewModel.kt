@@ -2,60 +2,66 @@ package com.example.moneymindermobile.data
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.moneymindermobile.data.api.ApiEndpoints
-import com.example.moneymindermobile.data.api.entities.SignInResult
-import com.example.moneymindermobile.data.api.mutations.signin.SignInResponse
-import com.example.moneymindermobile.data.api.mutations.signin.signInMutationBuilder
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.client.statement.HttpResponse
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
-import io.ktor.http.isSuccess
+import com.apollographql.apollo3.ApolloClient
+import com.apollographql.apollo3.exception.ApolloException
+import com.example.CurrentUserQuery
+import com.example.SignInMutation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
 
 class MainViewModel(
-    private val httpClient: HttpClient,
+    private val apolloClient: ApolloClient
 //    private val repository: Repository
 ) : ViewModel() {
+    // Global loading state
     private val _isLoading: MutableStateFlow<Boolean> = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
+
+    // Global graphql error
+    private val _graphQlError: MutableStateFlow<List<com.apollographql.apollo3.api.Error>?> = MutableStateFlow(null)
+    val graphQlError: StateFlow<List<com.apollographql.apollo3.api.Error>?> = _graphQlError
+
+    // SignIn response
+    private val _signInResponse: MutableStateFlow<SignInMutation.Data?> = MutableStateFlow(null)
+    val signInResponse : StateFlow<SignInMutation.Data?> = _signInResponse
+
+    // CurrentUser response
+    private val _currentUserResponse: MutableStateFlow<CurrentUserQuery.Data?> = MutableStateFlow(null)
+    val currentUserResponse: StateFlow<CurrentUserQuery.Data?> = _currentUserResponse
 
     fun signIn(username: String, password: String, rememberMe: Boolean) {
         viewModelScope.launch {
             println("signing in")
             _isLoading.value = true
-            val query: String =
-                signInMutationBuilder(
-                    username = username,
-                    password = password,
-                    rememberMe = rememberMe
-                )
-            println(query)
-
             try {
-                val response: HttpResponse = httpClient.post(ApiEndpoints.GRAPHQL) {
-                    setBody(query)
-                    contentType(ContentType.Application.Json)
+                val response = apolloClient.mutation(SignInMutation(username, password, rememberMe)).execute()
+                response.data.let {
+                    _signInResponse.value = it
                 }
-                if (response.status.isSuccess()) {
-                    val responseBody: String = response.body()
-                    val signInResponse: SignInResponse = Json.decodeFromString(responseBody)
-                    val signInSucceeded: Boolean = signInResponse.data.signIn.succeeded
-                    _isLoading.value = false
-                    println("signIn successfully")
-                } else {
-                    _isLoading.value = false
-                    println("signIn failed")
-                }
-            } catch (e: Exception) {
+                _graphQlError.value = response.errors
+            } catch (e: ApolloException){
+                println(e)
+            } finally {
                 _isLoading.value = false
-                println("Error signIn: ${e.message}")
+            }
+        }
+    }
+
+    fun getCurrentUser(){
+        viewModelScope.launch {
+            println("fetching current user")
+            _isLoading.value = true
+            try {
+                val response = apolloClient.query(CurrentUserQuery()).execute()
+                response.data.let {
+                    _currentUserResponse.value = it
+                }
+                _graphQlError.value = response.errors
+            } catch (e: ApolloException){
+                println(e)
+            } finally {
+                _isLoading.value = false
             }
         }
     }

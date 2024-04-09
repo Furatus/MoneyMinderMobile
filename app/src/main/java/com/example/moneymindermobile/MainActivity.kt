@@ -10,17 +10,36 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.moneymindermobile.data.HttpClient
+import com.apollographql.apollo3.ApolloClient
+import com.apollographql.apollo3.network.okHttpClient
 import com.example.moneymindermobile.data.MainViewModel
+import com.example.moneymindermobile.data.api.ApiEndpoints
 import com.example.moneymindermobile.ui.screens.HomeScreen
 import com.example.moneymindermobile.ui.screens.LoginScreen
 import com.example.moneymindermobile.ui.screens.RegistrationScreen
 import com.example.moneymindermobile.ui.theme.MoneyMinderMobileTheme
+import okhttp3.JavaNetCookieJar
+import okhttp3.OkHttpClient
+import java.net.CookieManager
+import java.net.CookiePolicy
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val viewModel = MainViewModel(httpClient = HttpClient)
+
+        val cookieManager = CookieManager()
+        cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL)
+
+        val okHttpClient = OkHttpClient.Builder()
+            .cookieJar(JavaNetCookieJar(cookieManager))
+            .build()
+
+        val apolloClient = ApolloClient.Builder()
+            .serverUrl(ApiEndpoints.GRAPHQL)
+            .okHttpClient(okHttpClient)
+            .build()
+
+        val viewModel = MainViewModel(apolloClient)
         setContent {
             MoneyMinderMobileTheme {
                 // A surface container using the 'background' color from the theme

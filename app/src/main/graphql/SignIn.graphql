@@ -1,0 +1,5 @@
+mutation SignIn($username: String!, $password: String!, $rememberMe: Boolean!){
+    signIn(appUserLoginDto: {password: $password, username: $username, rememberMe: $rememberMe}){
+        succeeded
+    }
+}

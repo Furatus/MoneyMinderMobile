@@ -1,0 +1,497 @@
+input KeyValuePairOfGuidAndDecimalInput {
+    key: UUID!
+    value: Decimal!
+}
+
+input ListFilterInputTypeOfExpenseFilterInput {
+    all: ExpenseFilterInput
+    none: ExpenseFilterInput
+    some: ExpenseFilterInput
+    any: Boolean
+}
+
+input MessageSortInput {
+    id: SortEnumType
+    sender: AppUserSortInput
+    receiver: AppUserSortInput
+    content: SortEnumType
+    sentAt: SortEnumType
+}
+
+type KeyValuePairOfGuidAndDecimal {
+    key: UUID!
+    value: Decimal!
+}
+
+type GroupMessage {
+    id: UUID!
+    sender: AppUser!
+    group: Group!
+    content: String!
+    sentAt: DateTime!
+}
+
+type UserGroup {
+    user: AppUser!
+    group: Group!
+    joinedAt: DateTime!
+}
+
+input InvitationInsertDtoInput {
+    groupId: UUID!
+    userId: UUID!
+}
+
+input MessageFilterInput {
+    and: [MessageFilterInput!]
+    or: [MessageFilterInput!]
+    id: UuidOperationFilterInput
+    sender: AppUserFilterInput
+    receiver: AppUserFilterInput
+    content: StringOperationFilterInput
+    sentAt: DateTimeOperationFilterInput
+}
+
+input MessageInsertInput {
+    receiverId: UUID!
+    content: String!
+}
+
+input ListFilterInputTypeOfMessageFilterInput {
+    all: MessageFilterInput
+    none: MessageFilterInput
+    some: MessageFilterInput
+    any: Boolean
+}
+
+input AppUserFilterInput {
+    and: [AppUserFilterInput!]
+    or: [AppUserFilterInput!]
+    balance: DecimalOperationFilterInput
+    userGroups: ListFilterInputTypeOfUserGroupFilterInput
+    ownedGroups: ListFilterInputTypeOfGroupFilterInput
+    sentMessages: ListFilterInputTypeOfMessageFilterInput
+    receivedMessages: ListFilterInputTypeOfMessageFilterInput
+    sentGroupMessages: ListFilterInputTypeOfGroupMessageFilterInput
+    userExpenses: ListFilterInputTypeOfUserExpenseFilterInput
+    createdExpenses: ListFilterInputTypeOfExpenseFilterInput
+    invitations: ListFilterInputTypeOfInvitationFilterInput
+    avatarUrl: StringOperationFilterInput
+    id: UuidOperationFilterInput
+    userName: StringOperationFilterInput
+    normalizedUserName: StringOperationFilterInput
+    email: StringOperationFilterInput
+    normalizedEmail: StringOperationFilterInput
+    emailConfirmed: BooleanOperationFilterInput
+    passwordHash: StringOperationFilterInput
+    securityStamp: StringOperationFilterInput
+    concurrencyStamp: StringOperationFilterInput
+    phoneNumber: StringOperationFilterInput
+    phoneNumberConfirmed: BooleanOperationFilterInput
+    twoFactorEnabled: BooleanOperationFilterInput
+    lockoutEnd: DateTimeOperationFilterInput
+    lockoutEnabled: BooleanOperationFilterInput
+    accessFailedCount: IntOperationFilterInput
+}
+
+input AppUserSortInput {
+    balance: SortEnumType
+    avatarUrl: SortEnumType
+    id: SortEnumType
+    userName: SortEnumType
+    normalizedUserName: SortEnumType
+    email: SortEnumType
+    normalizedEmail: SortEnumType
+    emailConfirmed: SortEnumType
+    passwordHash: SortEnumType
+    securityStamp: SortEnumType
+    concurrencyStamp: SortEnumType
+    phoneNumber: SortEnumType
+    phoneNumberConfirmed: SortEnumType
+    twoFactorEnabled: SortEnumType
+    lockoutEnd: SortEnumType
+    lockoutEnabled: SortEnumType
+    accessFailedCount: SortEnumType
+}
+
+enum ValidImageExtensions {
+    JPG
+    PNG
+    JPEG
+}
+
+input ListFilterInputTypeOfInvitationFilterInput {
+    all: InvitationFilterInput
+    none: InvitationFilterInput
+    some: InvitationFilterInput
+    any: Boolean
+}
+
+input UuidOperationFilterInput {
+    eq: UUID
+    neq: UUID
+    in: [UUID]
+    nin: [UUID]
+    gt: UUID
+    ngt: UUID
+    gte: UUID
+    ngte: UUID
+    lt: UUID
+    nlt: UUID
+    lte: UUID
+    nlte: UUID
+}
+
+input AppUserInsertDtoInput {
+    userName: String!
+    email: String!
+    password: String!
+    role: String!
+}
+
+type Mutation {
+    createUser(appUserInsertDto: AppUserInsertDtoInput!): AppUser
+    signIn(appUserLoginDto: AppUserLoginDtoInput!): SignInResult!
+    signOut: Boolean!
+    deleteSelf: Boolean!
+    joinGroup(userGroupInsertInput: UserGroupInsertInput!): UserGroup
+    refuseInvitation(groupId: UUID!): Boolean!
+    payDues: Boolean!
+    payDuesByExpenseId(expenseIds: [UUID!]!): Boolean!
+    uploadProfilePicture: String!
+    addToBalance(amount: Decimal!): Boolean!
+    createGroup(groupInsertInput: GroupInsertInput!): Group
+    inviteUser(invitationInsertDto: InvitationInsertDtoInput!): Invitation
+    uploadGroupImagePicture(groupId: UUID!): String!
+    sendMessage(messageInsertInput: MessageInsertInput!): Message
+    sendGroupMessage(
+        groupMessageInsertInput: GroupMessageInsertInput!
+    ): GroupMessage
+    addUserExpense(expenseInsertInput: ExpenseInsertInput!): [UserExpense]!
+    uploadExpenseJustification(expenseId: UUID!): String!
+    expenseJustification(expenseId: UUID!): String!
+}
+
+type Message {
+    id: UUID!
+    sender: AppUser!
+    receiver: AppUser!
+    content: String!
+    sentAt: DateTime!
+}
+
+input BooleanOperationFilterInput {
+    eq: Boolean
+    neq: Boolean
+}
+
+enum SortEnumType {
+    ASC
+    DESC
+}
+
+input ExpensePrevisualizationInput {
+    userAmountsList: [KeyValuePairOfGuidAndNullableOfDecimalInput!]!
+    groupId: UUID!
+    amount: Decimal!
+    description: String!
+}
+
+input GroupSortInput {
+    id: SortEnumType
+    name: SortEnumType
+    description: SortEnumType
+    image: SortEnumType
+    owner: AppUserSortInput
+    groupImageUrl: SortEnumType
+}
+
+input ExpenseFilterInput {
+    and: [ExpenseFilterInput!]
+    or: [ExpenseFilterInput!]
+    id: UuidOperationFilterInput
+    group: GroupFilterInput
+    amount: DecimalOperationFilterInput
+    description: StringOperationFilterInput
+    createdAt: DateTimeOperationFilterInput
+    createdBy: AppUserFilterInput
+    userExpenses: ListFilterInputTypeOfUserExpenseFilterInput
+}
+
+input KeyValuePairOfGuidAndNullableOfDecimalInput {
+    key: UUID!
+    value: Decimal
+}
+
+input AppUserLoginDtoInput {
+    username: String!
+    password: String!
+    rememberMe: Boolean!
+}
+
+input GroupMessageInsertInput {
+    groupId: UUID!
+    content: String!
+}
+
+input ListFilterInputTypeOfGroupMessageFilterInput {
+    all: GroupMessageFilterInput
+    none: GroupMessageFilterInput
+    some: GroupMessageFilterInput
+    any: Boolean
+}
+
+type UserExpense {
+    expense: Expense!
+    user: AppUser!
+    amount: Decimal!
+    paidAt: DateTime
+}
+
+type SignInResult {
+    succeeded: Boolean!
+    isLockedOut: Boolean!
+    isNotAllowed: Boolean!
+    requiresTwoFactor: Boolean!
+}
+
+input ListFilterInputTypeOfUserExpenseFilterInput {
+    all: UserExpenseFilterInput
+    none: UserExpenseFilterInput
+    some: UserExpenseFilterInput
+    any: Boolean
+}
+
+input GroupFilterInput {
+    and: [GroupFilterInput!]
+    or: [GroupFilterInput!]
+    id: UuidOperationFilterInput
+    name: StringOperationFilterInput
+    description: StringOperationFilterInput
+    image: StringOperationFilterInput
+    userGroups: ListFilterInputTypeOfUserGroupFilterInput
+    owner: AppUserFilterInput
+    receivedGroupMessages: ListFilterInputTypeOfGroupMessageFilterInput
+    expenses: ListFilterInputTypeOfExpenseFilterInput
+    invitations: ListFilterInputTypeOfInvitationFilterInput
+    groupImageUrl: StringOperationFilterInput
+}
+
+input StringOperationFilterInput {
+    and: [StringOperationFilterInput!]
+    or: [StringOperationFilterInput!]
+    eq: String
+    neq: String
+    contains: String
+    ncontains: String
+    in: [String]
+    nin: [String]
+    startsWith: String
+    nstartsWith: String
+    endsWith: String
+    nendsWith: String
+}
+
+input GroupMessageFilterInput {
+    and: [GroupMessageFilterInput!]
+    or: [GroupMessageFilterInput!]
+    id: UuidOperationFilterInput
+    sender: AppUserFilterInput
+    group: GroupFilterInput
+    content: StringOperationFilterInput
+    sentAt: DateTimeOperationFilterInput
+}
+
+input DecimalOperationFilterInput {
+    eq: Decimal
+    neq: Decimal
+    in: [Decimal]
+    nin: [Decimal]
+    gt: Decimal
+    ngt: Decimal
+    gte: Decimal
+    ngte: Decimal
+    lt: Decimal
+    nlt: Decimal
+    lte: Decimal
+    nlte: Decimal
+}
+
+type Group {
+    id: UUID!
+    imageExtension: ValidImageExtensions
+    name: String!
+    description: String!
+    image: String
+    userGroups: [UserGroup!]!
+    owner: AppUser!
+    receivedGroupMessages: [GroupMessage!]!
+    expenses: [Expense!]!
+    invitations: [Invitation!]!
+    groupImageUrl: String
+}
+
+type Query {
+    users(where: AppUserFilterInput, order: [AppUserSortInput!]): [AppUser!]!
+    currentUser(where: AppUserFilterInput, order: [AppUserSortInput!]): AppUser
+    userById(
+        id: UUID!
+        where: AppUserFilterInput
+        order: [AppUserSortInput!]
+    ): AppUser
+    userByEmail(
+        email: String!
+        where: AppUserFilterInput
+        order: [AppUserSortInput!]
+    ): AppUser
+    groups(where: GroupFilterInput, order: [GroupSortInput!]): [Group!]!
+    groupById(id: UUID!, where: GroupFilterInput, order: [GroupSortInput!]): Group
+    messagesByOtherUserId(
+        otherUserId: UUID!
+        where: MessageFilterInput
+        order: [MessageSortInput!]
+    ): [Message!]!
+    previsualizeUserExpenses(
+        expensePrevisualizationInput: ExpensePrevisualizationInput!
+    ): [KeyValuePairOfGuidAndDecimal!]!
+}
+
+input UserGroupInsertInput {
+    groupId: UUID!
+}
+
+input IntOperationFilterInput {
+    eq: Int
+    neq: Int
+    in: [Int]
+    nin: [Int]
+    gt: Int
+    ngt: Int
+    gte: Int
+    ngte: Int
+    lt: Int
+    nlt: Int
+    lte: Int
+    nlte: Int
+}
+
+type AppUser {
+    id: UUID!
+    avatarExtension: ValidImageExtensions
+    balance: Decimal!
+    userGroups: [UserGroup!]!
+    ownedGroups: [Group!]!
+    sentMessages: [Message!]!
+    receivedMessages: [Message!]!
+    sentGroupMessages: [GroupMessage!]!
+    userExpenses: [UserExpense!]!
+    createdExpenses: [Expense!]!
+    invitations: [Invitation!]!
+    avatarUrl: String
+    userName: String
+    email: String
+}
+
+type Expense {
+    id: UUID!
+    group: Group!
+    amount: Decimal!
+    description: String!
+    createdAt: DateTime!
+    createdBy: AppUser!
+    userExpenses: [UserExpense!]!
+}
+
+input GroupInsertInput {
+    name: String!
+    description: String!
+    image: String
+}
+
+"""
+The built-in `Decimal` scalar type.
+"""
+scalar Decimal
+
+input DateTimeOperationFilterInput {
+    eq: DateTime
+    neq: DateTime
+    in: [DateTime]
+    nin: [DateTime]
+    gt: DateTime
+    ngt: DateTime
+    gte: DateTime
+    ngte: DateTime
+    lt: DateTime
+    nlt: DateTime
+    lte: DateTime
+    nlte: DateTime
+}
+
+input ListFilterInputTypeOfGroupFilterInput {
+    all: GroupFilterInput
+    none: GroupFilterInput
+    some: GroupFilterInput
+    any: Boolean
+}
+
+input ListFilterInputTypeOfUserGroupFilterInput {
+    all: UserGroupFilterInput
+    none: UserGroupFilterInput
+    some: UserGroupFilterInput
+    any: Boolean
+}
+
+input ExpenseInsertInput {
+    usersWithAmount: [KeyValuePairOfGuidAndDecimalInput!]!
+    groupId: UUID!
+    description: String!
+}
+
+input UserExpenseFilterInput {
+    and: [UserExpenseFilterInput!]
+    or: [UserExpenseFilterInput!]
+    expense: ExpenseFilterInput
+    user: AppUserFilterInput
+    amount: DecimalOperationFilterInput
+    paidAt: DateTimeOperationFilterInput
+}
+
+input UserGroupFilterInput {
+    and: [UserGroupFilterInput!]
+    or: [UserGroupFilterInput!]
+    user: AppUserFilterInput
+    group: GroupFilterInput
+    joinedAt: DateTimeOperationFilterInput
+}
+
+type Invitation {
+    group: Group!
+    user: AppUser!
+    invitedAt: DateTime!
+}
+
+type Subscription {
+    messageAdded: Message
+}
+
+enum ApplyPolicy {
+    BEFORE_RESOLVER
+    AFTER_RESOLVER
+    VALIDATION
+}
+
+scalar UUID @specifiedBy(url: "https://tools.ietf.org/html/rfc4122")
+
+"""
+The `DateTime` scalar represents an ISO-8601 compliant date time type.
+"""
+scalar DateTime @specifiedBy(url: "https://www.graphql-scalars.com/date-time")
+
+input InvitationFilterInput {
+    and: [InvitationFilterInput!]
+    or: [InvitationFilterInput!]
+    group: GroupFilterInput
+    user: AppUserFilterInput
+    invitedAt: DateTimeOperationFilterInput
+}

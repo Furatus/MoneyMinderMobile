@@ -1,8 +1,3 @@
-input KeyValuePairOfGuidAndDecimalInput {
-    key: UUID!
-    value: Decimal!
-}
-
 input ListFilterInputTypeOfExpenseFilterInput {
     all: ExpenseFilterInput
     none: ExpenseFilterInput
@@ -194,7 +189,6 @@ input ExpensePrevisualizationInput {
     userAmountsList: [KeyValuePairOfGuidAndNullableOfDecimalInput!]!
     groupId: UUID!
     amount: Decimal!
-    description: String!
 }
 
 input GroupSortInput {
@@ -443,8 +437,9 @@ input ListFilterInputTypeOfUserGroupFilterInput {
 }
 
 input ExpenseInsertInput {
-    usersWithAmount: [KeyValuePairOfGuidAndDecimalInput!]!
+    userAmountsList: [KeyValuePairOfGuidAndNullableOfDecimalInput!]!
     groupId: UUID!
+    amount: Decimal!
     description: String!
 }
 

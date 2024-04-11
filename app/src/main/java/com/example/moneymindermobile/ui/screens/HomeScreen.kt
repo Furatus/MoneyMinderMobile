@@ -25,10 +25,10 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
 
     Column {
         Text(text = "home")
-        if (isLoading.value){
+        if (isLoading.value) {
             CircularProgressIndicator()
-        } else{
-            CurrentUserCard(currentUserQueryData = currentUserState.value)
+        } else {
+            CurrentUserCard(currentUserQueryData = currentUserState.value, viewModel = viewModel)
         }
     }
 }

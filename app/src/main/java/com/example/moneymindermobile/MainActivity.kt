@@ -39,7 +39,7 @@ class MainActivity : ComponentActivity() {
             .okHttpClient(okHttpClient)
             .build()
 
-        val viewModel = MainViewModel(apolloClient)
+        val viewModel = MainViewModel(apolloClient, okHttpClient)
         setContent {
             MoneyMinderMobileTheme {
                 // A surface container using the 'background' color from the theme
@@ -50,12 +50,15 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
                     NavHost(navController = navController, startDestination = routes.LOGIN) {
                         composable(routes.HOME) {
+                            viewModel.refreshGraphQlError()
                             HomeScreen(viewModel = viewModel, navController = navController)
                         }
                         composable(routes.LOGIN) {
+                            viewModel.refreshGraphQlError()
                             LoginScreen(viewModel = viewModel, navController = navController)
                         }
                         composable(routes.REGISTER) {
+                            viewModel.refreshGraphQlError()
                             RegistrationScreen(viewModel = viewModel, navController = navController)
                         }
                     }

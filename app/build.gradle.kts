@@ -72,24 +72,24 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
 
-    implementation(libs.ktor.client.core)
-
-    // Moteur populaire
-    implementation(libs.ktor.client.cio)
-
-    // Exemples de plugins
-    implementation(libs.ktor.serialization.kotlinx.json)
-    implementation(libs.ktor.client.content.negotiation)
-    implementation(libs.ktor.client.logging)
+//    implementation(libs.ktor.client.core)
+//
+//    // Moteur populaire
+//    implementation(libs.ktor.client.cio)
+//
+//    // Exemples de plugins
+//    implementation(libs.ktor.serialization.kotlinx.json)
+//    implementation(libs.ktor.client.content.negotiation)
+//    implementation(libs.ktor.client.logging)
 
     // Coil
     implementation(libs.coil.compose)
 
     // AppolloGraphQL
-    implementation("com.apollographql.apollo3:apollo-runtime:3.8.3")
+    implementation(libs.apollo.runtime)
 
     // Cookie Jar
-    implementation ("com.squareup.okhttp3:okhttp-urlconnection:4.9.3")
+    implementation (libs.okhttp.urlconnection)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

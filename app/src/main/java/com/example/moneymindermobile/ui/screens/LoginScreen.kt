@@ -90,6 +90,7 @@ fun LoginScreen(viewModel: MainViewModel, navController: NavHostController) {
         if (registerButtonClicked.value) {
             println("register button clicked!")
             submitButtonClicked.value = false
+            navController.navigate(routes.REGISTER)
         }
     }
 }

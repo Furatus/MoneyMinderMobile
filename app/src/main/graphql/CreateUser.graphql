@@ -1,0 +1,5 @@
+mutation CreateUser($userName:String!, $email:String!, $password:String!){
+    createUser(appUserInsertDto: {userName: $userName password: $password email: $email role: "User"}){
+        id
+    }
+}

@@ -14,6 +14,7 @@ import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.network.okHttpClient
 import com.example.moneymindermobile.data.MainViewModel
 import com.example.moneymindermobile.data.api.ApiEndpoints
+import com.example.moneymindermobile.ui.screens.GroupDetailsScreen
 import com.example.moneymindermobile.ui.screens.HomeScreen
 import com.example.moneymindermobile.ui.screens.LoginScreen
 import com.example.moneymindermobile.ui.screens.RegistrationScreen
@@ -60,6 +61,16 @@ class MainActivity : ComponentActivity() {
                         composable(routes.REGISTER) {
                             viewModel.refreshGraphQlError()
                             RegistrationScreen(viewModel = viewModel, navController = navController)
+                        }
+                        composable("${routes.GROUP_DETAILS}/{groupId}") { navBackStackEntry ->
+                            viewModel.refreshGraphQlError()
+                            val groupId =
+                                navBackStackEntry.arguments?.getString("groupId")
+                            GroupDetailsScreen(
+                                groupId = groupId,
+                                viewModel = viewModel,
+                                navController = navController
+                            )
                         }
                     }
                 }

@@ -1,0 +1,27 @@
+query GetGroupById($groupId:UUID!){
+    groupById(id: $groupId){
+        id
+        groupImageUrl
+        name
+        userGroups {
+            joinedAt
+            user {
+                id
+                userName
+                avatarUrl
+            }
+        }
+        description
+        expenses {
+            id
+            description
+            amount
+            createdAt
+            createdBy {
+                id
+                userName
+                avatarUrl
+            }
+        }
+    }
+}

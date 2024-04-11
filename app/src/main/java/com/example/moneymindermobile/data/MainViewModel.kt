@@ -6,6 +6,7 @@ import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.exception.ApolloException
 import com.example.CreateUserMutation
 import com.example.CurrentUserQuery
+import com.example.GetGroupByIdQuery
 import com.example.SignInMutation
 import com.example.UploadProfilePictureMutation
 import com.example.moneymindermobile.data.api.ApiEndpoints
@@ -44,6 +45,10 @@ class MainViewModel(
     private val _registerResponse: MutableStateFlow<CreateUserMutation.Data?> = MutableStateFlow(null)
     val registerResponse: StateFlow<CreateUserMutation.Data?> = _registerResponse
 
+    // GroupById response
+    private val _groupByIdResponse: MutableStateFlow<GetGroupByIdQuery.Data?> = MutableStateFlow(null)
+    val groupByIdResponse: StateFlow<GetGroupByIdQuery.Data?> = _groupByIdResponse
+
 
     // CurrentUser response
     private val _currentUserResponse: MutableStateFlow<CurrentUserQuery.Data?> =
@@ -58,6 +63,25 @@ class MainViewModel(
     fun refreshGraphQlError(){
         viewModelScope.launch {
             _graphQlError.value = emptyList()
+        }
+    }
+
+    fun getGroupById(groupId: String){
+        viewModelScope.launch {
+            println("getting group by id: $groupId")
+            _isLoading.value = true
+            try {
+                val response =
+                    apolloClient.query(GetGroupByIdQuery(groupId)).execute()
+                response.data.let {
+                    _groupByIdResponse.value = it
+                }
+                _graphQlError.value = response.errors
+            } catch (e: ApolloException){
+                println("e")
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 

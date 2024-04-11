@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.apollographql.apollo3.api.Error
 import com.example.moneymindermobile.data.MainViewModel
-import com.example.moneymindermobile.routes
+import com.example.moneymindermobile.Routes
 
 @Composable
 fun LoginScreen(viewModel: MainViewModel, navController: NavHostController) {
@@ -59,7 +59,7 @@ fun LoginScreen(viewModel: MainViewModel, navController: NavHostController) {
     LaunchedEffect(signInResponse) {
         if (signInResponse != null) {
             if (signInResponse!!.signIn.succeeded) {
-                navController.navigate(route = routes.HOME)
+                navController.navigate(route = Routes.HOME)
             }
         }
     }
@@ -90,7 +90,7 @@ fun LoginScreen(viewModel: MainViewModel, navController: NavHostController) {
         if (registerButtonClicked.value) {
             println("register button clicked!")
             submitButtonClicked.value = false
-            navController.navigate(routes.REGISTER)
+            navController.navigate(Routes.REGISTER)
         }
     }
 }

@@ -57,32 +57,20 @@ fun CurrentUserCard(currentUserQueryData: CurrentUserQuery.Data?, viewModel: Mai
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(8.dp)
             ) {
-                if (currentUserQueryData?.currentUser?.avatarUrl.isNullOrEmpty())
-                    Icon(
-                        imageVector = Icons.Filled.AccountCircle,
-                        contentDescription = "${currentUserQueryData?.currentUser?.userName} default avatar",
-                        modifier = Modifier
-                            .size(64.dp)
-                            .clickable { launcher.launch("image/*") }
-                    )
-                else
-                    AsyncImage(
-                        model = currentUserQueryData?.currentUser?.avatarUrl?.replace(
-                            "localhost",
-                            ApiEndpoints.API_ADDRESS
-                        ),
-                        contentDescription = "${currentUserQueryData?.currentUser?.userName} avatar",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(64.dp)
-                            .clickable { launcher.launch("image/*") }
-                    )
-                currentUserQueryData?.currentUser?.userName?.let {
-                    Text(
-                        text = it,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
+                val currentUser = currentUserQueryData?.currentUser
+                if (currentUser != null) {
+                    MoneyMinderImage(currentUser = currentUser) {
+                        launcher.launch("image/*")
+                    }
+                    currentUser.userName?.let {
+                        Text(
+                            text = it,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+                } else {
+                    Text(text = "Error fetching the connected user")
                 }
             }
         }

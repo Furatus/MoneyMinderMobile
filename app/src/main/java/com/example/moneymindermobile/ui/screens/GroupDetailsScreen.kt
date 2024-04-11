@@ -29,8 +29,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.GetGroupByIdQuery
+import com.example.moneymindermobile.Routes
 import com.example.moneymindermobile.data.MainViewModel
 import com.example.moneymindermobile.data.api.ApiEndpoints
+import com.example.moneymindermobile.ui.components.MoneyMinderImage
 
 @Composable
 fun GroupDetailsScreen(
@@ -60,45 +62,58 @@ fun GroupDetailsScreen(
         } else {
             val groupById = currentGroupByIdState.value?.groupById
             if (groupById != null) {
-                if (groupById.groupImageUrl.isNullOrEmpty())
-                    Icon(
-                        imageVector = Icons.Filled.AccountBox,
-                        contentDescription = "${groupById.name} default image",
-                        modifier = Modifier
-                            .size(64.dp)
-                    )
-                else
-                    AsyncImage(
-                        model = groupById.groupImageUrl.replace(
-                            "localhost",
-                            ApiEndpoints.API_ADDRESS
-                        ),
-                        contentDescription = "${groupById.name} avatar",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(64.dp)
-                    )
-                Card {
-                    val currentGroupMembersWithoutCurrentUser =
-                        groupById.userGroups.filter { it.user.id != currentUserId }
-                    if (currentGroupMembersWithoutCurrentUser.isEmpty()) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                val isGroupByIdCreatedByCurrentUser = groupById.owner.id == currentUserId
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (groupById.groupImageUrl.isNullOrEmpty()) {
                             Icon(
-                                imageVector = Icons.Filled.Info,
-                                contentDescription = "Empty group"
+                                imageVector = Icons.Filled.AccountBox,
+                                contentDescription = "${groupById.name} default image",
+                                modifier = Modifier
+                                    .size(64.dp)
                             )
-                            Text(text = "This group has no other group members yet")
+                        } else {
+                            AsyncImage(
+                                model = groupById.groupImageUrl.replace(
+                                    "localhost",
+                                    ApiEndpoints.API_ADDRESS
+                                ),
+                                contentDescription = "${groupById.name} avatar",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(64.dp)
+                            )
                         }
-                    } else {
-                        Column {
-                            Text(text = "Here are the very lucky members of this group:")
-                            LazyRowOfMembers(
-                                userGroups = currentGroupMembersWithoutCurrentUser,
-                                currentUserId = currentUserId
+                        Text(text = groupById.name)
+                    }
+                    if (isGroupByIdCreatedByCurrentUser)
+                        Text(text = "You are the owner of this group")
+                    Card {
+                        val currentGroupMembersWithoutCurrentUser =
+                            groupById.userGroups.filter { it.user.id != currentUserId }
+                        if (currentGroupMembersWithoutCurrentUser.isEmpty()) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                println("clicked member with id: ${it.user.id}")
+                                Icon(
+                                    imageVector = Icons.Filled.Info,
+                                    contentDescription = "Empty group"
+                                )
+                                Text(text = "This group has no other group members yet")
+                            }
+                        } else {
+                            Column {
+                                Text(text = "Here are the very lucky members of ${if (isGroupByIdCreatedByCurrentUser) "your" else "this"} group:")
+                                LazyRowOfMembers(
+                                    userGroups = currentGroupMembersWithoutCurrentUser,
+                                    currentUserId = currentUserId
+                                ) {
+                                    navController.navigate("${Routes.USER_DETAILS}/${it.user.id}")
+                                }
                             }
                         }
                     }
@@ -115,7 +130,7 @@ fun LazyRowOfMembers(
     onMemberClicked: (GetGroupByIdQuery.UserGroup) -> Unit
 ) {
     LazyRow {
-        items(userGroups ?: listOf()) { member ->
+        items(userGroups) { member ->
             GroupMemberCard(member = member, onMemberClicked = onMemberClicked)
         }
     }
@@ -135,24 +150,7 @@ fun GroupMemberCard(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (member.user.avatarUrl.isNullOrEmpty())
-                Icon(
-                    imageVector = Icons.Filled.AccountBox,
-                    contentDescription = "${member.user.userName} default image",
-                    modifier = Modifier
-                        .size(64.dp)
-                )
-            else
-                AsyncImage(
-                    model = member.user.avatarUrl.replace(
-                        "localhost",
-                        ApiEndpoints.API_ADDRESS
-                    ),
-                    contentDescription = "${member.user.userName} avatar",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(64.dp)
-                )
+            MoneyMinderImage(currentUser = member.user)
             member.user.userName?.let { Text(text = it) }
         }
     }

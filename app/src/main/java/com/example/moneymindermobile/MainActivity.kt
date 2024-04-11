@@ -18,6 +18,7 @@ import com.example.moneymindermobile.ui.screens.GroupDetailsScreen
 import com.example.moneymindermobile.ui.screens.HomeScreen
 import com.example.moneymindermobile.ui.screens.LoginScreen
 import com.example.moneymindermobile.ui.screens.RegistrationScreen
+import com.example.moneymindermobile.ui.screens.UserDetailsScreen
 import com.example.moneymindermobile.ui.theme.MoneyMinderMobileTheme
 import okhttp3.JavaNetCookieJar
 import okhttp3.OkHttpClient
@@ -49,25 +50,35 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
-                    NavHost(navController = navController, startDestination = routes.LOGIN) {
-                        composable(routes.HOME) {
+                    NavHost(navController = navController, startDestination = Routes.LOGIN) {
+                        composable(Routes.HOME) {
                             viewModel.refreshGraphQlError()
                             HomeScreen(viewModel = viewModel, navController = navController)
                         }
-                        composable(routes.LOGIN) {
+                        composable(Routes.LOGIN) {
                             viewModel.refreshGraphQlError()
                             LoginScreen(viewModel = viewModel, navController = navController)
                         }
-                        composable(routes.REGISTER) {
+                        composable(Routes.REGISTER) {
                             viewModel.refreshGraphQlError()
                             RegistrationScreen(viewModel = viewModel, navController = navController)
                         }
-                        composable("${routes.GROUP_DETAILS}/{groupId}") { navBackStackEntry ->
+                        composable("${Routes.GROUP_DETAILS}/{groupId}") { navBackStackEntry ->
                             viewModel.refreshGraphQlError()
                             val groupId =
                                 navBackStackEntry.arguments?.getString("groupId")
                             GroupDetailsScreen(
                                 groupId = groupId,
+                                viewModel = viewModel,
+                                navController = navController
+                            )
+                        }
+                        composable("${Routes.USER_DETAILS}/{userId}") { navBackStackEntry ->
+                            viewModel.refreshGraphQlError()
+                            val userId =
+                                navBackStackEntry.arguments?.getString("userId")
+                            UserDetailsScreen(
+                                userId = userId,
                                 viewModel = viewModel,
                                 navController = navController
                             )

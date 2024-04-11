@@ -1,0 +1,7 @@
+query GetUserDetailsById($userId: UUID!){
+    userById(id: $userId){
+        id
+        userName
+        avatarUrl
+    }
+}

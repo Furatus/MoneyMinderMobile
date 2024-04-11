@@ -11,6 +11,9 @@ query GetGroupById($groupId:UUID!){
                 avatarUrl
             }
         }
+        owner {
+            id
+        }
         description
         expenses {
             id

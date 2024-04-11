@@ -4,9 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.exception.ApolloException
+import com.example.CreateGroupMutation
 import com.example.CreateUserMutation
 import com.example.CurrentUserQuery
 import com.example.GetGroupByIdQuery
+import com.example.GetUserDetailsByIdQuery
 import com.example.SignInMutation
 import com.example.UploadProfilePictureMutation
 import com.example.moneymindermobile.data.api.ApiEndpoints
@@ -24,8 +26,7 @@ import java.io.File
 import java.io.IOException
 
 class MainViewModel(
-    private val apolloClient: ApolloClient,
-    private val okHttpClient: OkHttpClient
+    private val apolloClient: ApolloClient, private val okHttpClient: OkHttpClient
 //    private val repository: Repository
 ) : ViewModel() {
     // Global loading state
@@ -42,42 +43,89 @@ class MainViewModel(
     val signInResponse: StateFlow<SignInMutation.Data?> = _signInResponse
 
     // Register response
-    private val _registerResponse: MutableStateFlow<CreateUserMutation.Data?> = MutableStateFlow(null)
+    private val _registerResponse: MutableStateFlow<CreateUserMutation.Data?> =
+        MutableStateFlow(null)
     val registerResponse: StateFlow<CreateUserMutation.Data?> = _registerResponse
 
     // GroupById response
-    private val _groupByIdResponse: MutableStateFlow<GetGroupByIdQuery.Data?> = MutableStateFlow(null)
+    private val _groupByIdResponse: MutableStateFlow<GetGroupByIdQuery.Data?> =
+        MutableStateFlow(null)
     val groupByIdResponse: StateFlow<GetGroupByIdQuery.Data?> = _groupByIdResponse
 
+    // UserDetailsById response
+    private val _userDetailsById: MutableStateFlow<GetUserDetailsByIdQuery.Data?> =
+        MutableStateFlow(null)
+    val userDetailsById: StateFlow<GetUserDetailsByIdQuery.Data?> = _userDetailsById
 
     // CurrentUser response
     private val _currentUserResponse: MutableStateFlow<CurrentUserQuery.Data?> =
         MutableStateFlow(null)
     val currentUserResponse: StateFlow<CurrentUserQuery.Data?> = _currentUserResponse
 
+    // createGroup request
+    private val _createGroupResponse: MutableStateFlow<CreateGroupMutation.Data?> =
+        MutableStateFlow(null)
+    val createGroupResponse: StateFlow<CreateGroupMutation.Data?> = _createGroupResponse
+
     // uploadProfilePicture request
     private val _uploadProfilePictureResponse: MutableStateFlow<UploadProfilePictureMutation.Data?> =
         MutableStateFlow(null)
+
     val uploadProfilePictureResponse = _uploadProfilePictureResponse
 
-    fun refreshGraphQlError(){
+    fun refreshGraphQlError() {
         viewModelScope.launch {
             _graphQlError.value = emptyList()
         }
     }
 
-    fun getGroupById(groupId: String){
+    fun createGroup(name: String, description: String){
+        viewModelScope.launch {
+            println("creating group")
+            _isLoading.value = true
+            try {
+                val response = apolloClient.mutation(CreateGroupMutation(name = name, description = description)).execute()
+                response.data.let {
+                    _createGroupResponse.value = it
+                }
+                _graphQlError.value = response.errors
+            } catch (e: ApolloException){
+                println(e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun getUserDetailsById(userId: String) {
+        viewModelScope.launch {
+            println("getting user details by id: $userId")
+            _isLoading.value = true
+            try {
+                val response = apolloClient.query(GetUserDetailsByIdQuery(userId)).execute()
+                response.data.let {
+                    _userDetailsById.value = it
+                }
+                _graphQlError.value = response.errors
+            } catch (e: ApolloException) {
+                println(e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun getGroupById(groupId: String) {
         viewModelScope.launch {
             println("getting group by id: $groupId")
             _isLoading.value = true
             try {
-                val response =
-                    apolloClient.query(GetGroupByIdQuery(groupId)).execute()
+                val response = apolloClient.query(GetGroupByIdQuery(groupId)).execute()
                 response.data.let {
                     _groupByIdResponse.value = it
                 }
                 _graphQlError.value = response.errors
-            } catch (e: ApolloException){
+            } catch (e: ApolloException) {
                 println("e")
             } finally {
                 _isLoading.value = false
@@ -85,18 +133,21 @@ class MainViewModel(
         }
     }
 
-    fun register(username: String, password: String, email: String){
+    fun register(username: String, password: String, email: String) {
         viewModelScope.launch {
             println("registering")
             _isLoading.value = true
             try {
-                val response =
-                    apolloClient.mutation(CreateUserMutation(userName = username, password = password, email = email)).execute()
+                val response = apolloClient.mutation(
+                    CreateUserMutation(
+                        userName = username, password = password, email = email
+                    )
+                ).execute()
                 response.data.let {
                     _registerResponse.value = it
                 }
                 _graphQlError.value = response.errors
-            } catch (e: ApolloException){
+            } catch (e: ApolloException) {
                 println(e)
             } finally {
                 _isLoading.value = false
@@ -152,19 +203,14 @@ class MainViewModel(
                 var uploadLink = uploadLinkResponse.data?.uploadProfilePicture
                 uploadLink = uploadLink?.replace("localhost", ApiEndpoints.API_ADDRESS)
 
-                val requestBody = MultipartBody.Builder()
-                    .setType(MultipartBody.FORM)
-                    .addFormDataPart(
+                val requestBody =
+                    MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart(
                         "file",
                         imageFile.name,
                         imageFile.asRequestBody("image/*".toMediaTypeOrNull())
-                    )
-                    .build()
+                    ).build()
 
-                val request = Request.Builder()
-                    .url(uploadLink!!)
-                    .post(requestBody)
-                    .build()
+                val request = Request.Builder().url(uploadLink!!).post(requestBody).build()
 
                 val response = okHttpClient.newCall(request).execute()
 

@@ -1,0 +1,9 @@
+mutation CreateGroup($description:String!, $name:String!){
+    createGroup(groupInsertInput: {
+        name: $name
+        description: $description
+        image: null
+    }){
+        id
+    }
+}

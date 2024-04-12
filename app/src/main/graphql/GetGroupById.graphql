@@ -15,6 +15,13 @@ query GetGroupById($groupId:UUID!){
             id
         }
         description
+        invitations {
+            user {
+                id
+                avatarUrl
+                userName
+            }
+        }
         expenses {
             id
             description

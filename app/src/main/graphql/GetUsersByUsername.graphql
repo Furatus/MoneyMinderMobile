@@ -1,0 +1,7 @@
+query GetUsersByUsername($value:String!){
+    users(where: {userName: {contains: $value}}){
+        id
+        userName
+        avatarUrl
+    }
+}

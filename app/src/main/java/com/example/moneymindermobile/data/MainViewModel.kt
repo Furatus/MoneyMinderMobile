@@ -4,11 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.exception.ApolloException
+import com.example.AcceptInvitationMutation
 import com.example.CreateGroupMutation
 import com.example.CreateUserMutation
 import com.example.CurrentUserQuery
 import com.example.GetGroupByIdQuery
 import com.example.GetUserDetailsByIdQuery
+import com.example.GetUsersByUsernameQuery
+import com.example.InviteUserMutation
+import com.example.RefuseInvitationMutation
 import com.example.SignInMutation
 import com.example.UploadProfilePictureMutation
 import com.example.moneymindermobile.data.api.ApiEndpoints
@@ -26,7 +30,7 @@ import java.io.File
 import java.io.IOException
 
 class MainViewModel(
-    private val apolloClient: ApolloClient, private val okHttpClient: OkHttpClient
+    public val apolloClient: ApolloClient, private val okHttpClient: OkHttpClient
 //    private val repository: Repository
 ) : ViewModel() {
     // Global loading state
@@ -67,10 +71,17 @@ class MainViewModel(
         MutableStateFlow(null)
     val createGroupResponse: StateFlow<CreateGroupMutation.Data?> = _createGroupResponse
 
+    // GetUsersByUsername request
+    private val _getUsersByUsernameResponse: MutableStateFlow<GetUsersByUsernameQuery.Data?> =
+        MutableStateFlow(null)
+    val getUsersByUsernameResponse: StateFlow<GetUsersByUsernameQuery.Data?> =
+        _getUsersByUsernameResponse
+    private val _isGetUsersByUsernameLoading: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    val isGetUsersByUsernameLoading: StateFlow<Boolean> = _isGetUsersByUsernameLoading
+
     // uploadProfilePicture request
     private val _uploadProfilePictureResponse: MutableStateFlow<UploadProfilePictureMutation.Data?> =
         MutableStateFlow(null)
-
     val uploadProfilePictureResponse = _uploadProfilePictureResponse
 
     fun refreshGraphQlError() {
@@ -79,17 +90,79 @@ class MainViewModel(
         }
     }
 
-    fun createGroup(name: String, description: String){
+    fun handleInvitation(groupId: String, accept: Boolean) {
+        viewModelScope.launch {
+            println("${if (accept) "accepting" else "rejecting"} invitation to group $groupId")
+            _isLoading.value = true
+            try {
+                if (accept) {
+                    val response =
+                        apolloClient.mutation(AcceptInvitationMutation(groupId)).execute()
+                    _graphQlError.value = response.errors
+                } else {
+                    val response =
+                        apolloClient.mutation(RefuseInvitationMutation(groupId)).execute()
+                    _graphQlError.value = response.errors
+                }
+            } catch (e: ApolloException) {
+                println(e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun inviteUser(groupId: String, userId: String) {
+        viewModelScope.launch {
+            println("inviting user $userId to group $groupId")
+            _isLoading.value = true
+            try {
+                val response =
+                    apolloClient.mutation(InviteUserMutation(groupId = groupId, userId = userId))
+                        .execute()
+                _graphQlError.value = response.errors
+            } catch (e: ApolloException) {
+                println(e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun getUsersByUsername(value: String) {
+        viewModelScope.launch {
+            println("getting all users containing $value in their usernames")
+            _isGetUsersByUsernameLoading.value = true
+            try {
+                val response = apolloClient.query(GetUsersByUsernameQuery(value)).execute()
+                response.data.let {
+                    _getUsersByUsernameResponse.value = it
+                }
+                _graphQlError.value = response.errors
+            } catch (e: ApolloException) {
+                println(e)
+            } finally {
+                _isGetUsersByUsernameLoading.value = false
+            }
+        }
+    }
+
+    fun createGroup(name: String, description: String) {
         viewModelScope.launch {
             println("creating group")
             _isLoading.value = true
             try {
-                val response = apolloClient.mutation(CreateGroupMutation(name = name, description = description)).execute()
+                val response = apolloClient.mutation(
+                    CreateGroupMutation(
+                        name = name,
+                        description = description
+                    )
+                ).execute()
                 response.data.let {
                     _createGroupResponse.value = it
                 }
                 _graphQlError.value = response.errors
-            } catch (e: ApolloException){
+            } catch (e: ApolloException) {
                 println(e)
             } finally {
                 _isLoading.value = false

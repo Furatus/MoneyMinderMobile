@@ -15,14 +15,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import com.example.moneymindermobile.data.MainViewModel
-import com.example.moneymindermobile.ui.components.MoneyMinderImage
+import com.example.moneymindermobile.ui.components.EntityImage
 
 @Composable
 fun UserDetailsScreen(
     userId: String?,
     viewModel: MainViewModel,
     navController: NavHostController
-){
+) {
     val currentUserId =
         viewModel.currentUserResponse.collectAsState().value?.currentUser?.id?.toString()
     val isLoading = viewModel.isLoading.collectAsState()
@@ -44,10 +44,10 @@ fun UserDetailsScreen(
             }
         } else {
             val userDetails = userDetailsById.value?.userById
-            if (userDetails != null){
+            if (userDetails != null) {
                 Column {
                     userDetails.userName?.let { Text(text = it) }
-                    MoneyMinderImage(currentUser = userDetails)
+                    EntityImage(imageLink = userDetails.avatarUrl, title = userDetails.userName)
                 }
             } else {
                 Text(text = "Error getting details for user: $userId")

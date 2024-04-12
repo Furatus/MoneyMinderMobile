@@ -1,0 +1,25 @@
+mutation InviteUser($groupId: UUID!, $userId: UUID!){
+    inviteUser(invitationInsertDto: {
+        groupId: $groupId
+        userId: $userId
+    }){
+        user {
+            id
+            userName
+            avatarUrl
+        }
+        invitedAt
+    }
+}
+
+mutation AcceptInvitation($groupId: UUID!){
+    joinGroup(userGroupInsertInput: {
+        groupId: $groupId
+    }){
+        joinedAt
+    }
+}
+
+mutation RefuseInvitation($groupId: UUID!){
+    refuseInvitation(groupId: $groupId)
+}

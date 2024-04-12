@@ -1,9 +1,11 @@
 package com.example.moneymindermobile.ui.screens
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,6 +17,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -42,7 +45,7 @@ import com.example.CurrentUserQuery
 import com.example.moneymindermobile.Routes
 import com.example.moneymindermobile.data.MainViewModel
 import com.example.moneymindermobile.ui.components.CurrentUserCard
-import com.example.moneymindermobile.ui.components.MoneyMinderImage
+import com.example.moneymindermobile.ui.components.EntityImage
 
 @Composable
 fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
@@ -50,6 +53,7 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
     val currentUserState by viewModel.currentUserResponse.collectAsState()
     val graphQlErrors by viewModel.graphQlError.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val refreshTrigger = rememberSaveable { mutableStateOf(0) }
 
     // Properties to create a new group
     var showDialog by remember { mutableStateOf(false) }
@@ -57,8 +61,7 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
     var createGroupDescription by remember { mutableStateOf("") }
     val newGroupResponse by viewModel.createGroupResponse.collectAsState()
 
-
-    LaunchedEffect(firstFetchDone) {
+    LaunchedEffect(firstFetchDone, refreshTrigger.value) {
         viewModel.getCurrentUser()
     }
 
@@ -74,83 +77,179 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
                 CurrentUserCard(
                     currentUserQueryData = currentUserState, viewModel = viewModel
                 )
-                UserGroupList(currentUserQueryData = currentUserState) { clickedGroup ->
-                    navController.navigate("${Routes.GROUP_DETAILS}/${clickedGroup.group.id}")
+                Column(
+                    modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.primary),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Your Groups",
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                    UserGroupList(currentUserQueryData = currentUserState) { clickedGroup ->
+                        navController.navigate("${Routes.GROUP_DETAILS}/${clickedGroup.group.id}")
+                    }
+                    Button(onClick = { showDialog = true }) {
+                        Text(text = "Create new group")
+                    }
+                }
+                Column(
+                    modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.primary),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Your invitations",
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                    InvitationsList(
+                        currentUserQueryData = currentUserState,
+                        onAcceptClicked = { group ->
+                            viewModel.handleInvitation(groupId = group.id.toString(), accept = true)
+                            refreshTrigger.value++
+                        },
+                        onRefuseClicked = { group ->
+                            viewModel.handleInvitation(groupId = group.id.toString(), accept = false)
+                            refreshTrigger.value++
+                        }
+                    )
                 }
             }
-        }
-        Button(onClick = { showDialog = true }) {
-            Text(text = "Create new group")
-        }
-
-        if (showDialog) {
-            Dialog(onDismissRequest = {
-                createGroupDescription = ""
-                createGroupName = ""
-                showDialog = false
-            }) {
-                val keyboardController = LocalSoftwareKeyboardController.current
-                Column {
-                    TextField(
-                        value = createGroupName,
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Filled.Person,
-                                contentDescription = "Group Name Icon"
-                            )
-                        },
-                        onValueChange = { createGroupName = it },
-                        label = { Text("Group Name") },
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                    )
-                    TextField(
-                        value = createGroupDescription,
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Filled.Info,
-                                contentDescription = "Group Description Icon"
-                            )
-                        },
-                        onValueChange = { createGroupDescription = it },
-                        label = { Text("Group Description") },
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                    )
-                    Button(onClick = {
-                        viewModel.createGroup(
-                            name = createGroupName,
-                            description = createGroupDescription
-                        )
-                        val newGroupId = newGroupResponse?.createGroup?.id
-                        if (newGroupId != null) {
-                            navController.navigate("${Routes.GROUP_DETAILS}/${newGroupId}")
-                            showDialog = false
-                        }
-                    }) {
-                        Text(text = "Submit")
-                    }
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(100.dp)
-                    ) {
-                        if (graphQlErrors != null) {
-                            items(graphQlErrors!!) { error ->
-                                Text(
-                                    text = error.message,
-                                    color = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.padding(8.dp)
+            if (showDialog) {
+                Dialog(onDismissRequest = {
+                    createGroupDescription = ""
+                    createGroupName = ""
+                    showDialog = false
+                }) {
+                    val keyboardController = LocalSoftwareKeyboardController.current
+                    Column {
+                        TextField(
+                            value = createGroupName,
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Person,
+                                    contentDescription = "Group Name Icon"
                                 )
+                            },
+                            onValueChange = { createGroupName = it },
+                            label = { Text("Group Name") },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                        )
+                        TextField(
+                            value = createGroupDescription,
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Info,
+                                    contentDescription = "Group Description Icon"
+                                )
+                            },
+                            onValueChange = { createGroupDescription = it },
+                            label = { Text("Group Description") },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                        )
+                        Button(onClick = {
+                            viewModel.createGroup(
+                                name = createGroupName,
+                                description = createGroupDescription
+                            )
+                            val newGroupId = newGroupResponse?.createGroup?.id
+                            if (newGroupId != null) {
+                                navController.navigate("${Routes.GROUP_DETAILS}/${newGroupId}")
+                                showDialog = false
+                            }
+                        }) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Send,
+                                    contentDescription = "Create New Group Button"
+                                )
+                                Text(text = "Submit")
+                            }
+                        }
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(100.dp)
+                        ) {
+                            if (graphQlErrors != null) {
+                                items(graphQlErrors!!) { error ->
+                                    Text(
+                                        text = error.message,
+                                        color = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.padding(8.dp)
+                                    )
+                                }
                             }
                         }
                     }
+                }
+            }
+        }
+
+    }
+}
+
+@Composable
+fun InvitationsList(
+    currentUserQueryData: CurrentUserQuery.Data?,
+    onAcceptClicked: (CurrentUserQuery.Group1) -> Unit,
+    onRefuseClicked: (CurrentUserQuery.Group1) -> Unit,
+) {
+    val invitations = currentUserQueryData?.currentUser?.invitations
+    if (invitations != null) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxHeight(0.3f)
+        ) {
+            items(invitations) { invitation ->
+                InvitationCard(
+                    currentInvitation = invitation,
+                    onAcceptClicked = onAcceptClicked,
+                    onRefuseClicked = onRefuseClicked
+                )
+            }
+        }
+
+    }
+}
+
+@Composable
+fun InvitationCard(
+    currentInvitation: CurrentUserQuery.Invitation,
+    onAcceptClicked: (CurrentUserQuery.Group1) -> Unit,
+    onRefuseClicked: (CurrentUserQuery.Group1) -> Unit
+) {
+    val group = currentInvitation.group
+    Card(modifier = Modifier
+        .fillMaxWidth()
+        .padding(8.dp)) {
+        Column {
+            Row(
+                verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(8.dp)
+            ) {
+                EntityImage(imageLink = group.groupImageUrl, title = group.name)
+                Text(
+                    text = group.name,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+            Row {
+                Button(onClick = { onAcceptClicked(group) }) {
+                    Text(text = "Accept")
+                }
+                Button(onClick = { onRefuseClicked(group) }) {
+                    Text(text = "Refuse")
                 }
             }
         }
@@ -163,7 +262,16 @@ fun UserGroupList(
     onGroupClicked: (CurrentUserQuery.UserGroup) -> Unit
 ) {
     val userGroups = currentUserQueryData?.currentUser?.userGroups
-    userGroups?.forEach { currentUserGroup -> UserGroupCard(currentUserGroup, onGroupClicked) }
+    if (userGroups != null) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxHeight(0.3f)
+        ) {
+            items(userGroups) { item: CurrentUserQuery.UserGroup ->
+                UserGroupCard(currentUserGroup = item, onGroupClicked)
+            }
+        }
+    }
 }
 
 @Composable
@@ -175,13 +283,13 @@ fun UserGroupCard(
 
     Card(modifier = Modifier
         .fillMaxWidth()
-        .padding(16.dp)
+        .padding(8.dp)
         .clickable { onGroupClicked(currentUserGroup) }) {
         Column {
             Row(
                 verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(8.dp)
             ) {
-                MoneyMinderImage(group = group)
+                EntityImage(imageLink = group.groupImageUrl, title = group.name)
                 Text(
                     text = group.name,
                     fontWeight = FontWeight.Bold,

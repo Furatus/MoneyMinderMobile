@@ -11,6 +11,13 @@ query CurrentUser{
                 groupImageUrl
             }
         }
-
+        invitations {
+            invitedAt
+            group{
+                id
+                name
+                groupImageUrl
+            }
+        }
     }
 }

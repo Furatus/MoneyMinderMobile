@@ -1,9 +1,13 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.example.moneymindermobile.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,24 +17,35 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
@@ -40,6 +55,8 @@ import com.example.moneymindermobile.Routes
 import com.example.moneymindermobile.data.MainViewModel
 import com.example.moneymindermobile.data.api.ApiEndpoints
 import com.example.moneymindermobile.ui.components.EntityImage
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun GroupDetailsScreen(
@@ -55,8 +72,19 @@ fun GroupDetailsScreen(
     val currentGroupByIdState = viewModel.groupByIdResponse.collectAsState()
     val refreshTrigger = rememberSaveable { mutableStateOf(0)    }
 
+    val sheetStateOptions = rememberModalBottomSheetState()
+    var addUser by rememberSaveable { mutableStateOf(false) }
+    var isOptionsSheetOpen by rememberSaveable { mutableStateOf(false) }
+
+    val sheetStateMembers = rememberModalBottomSheetState()
+    var isMembersSheetOpen by rememberSaveable { mutableStateOf(false) }
+
     val getUsersByUsernameTextField = rememberSaveable { mutableStateOf("") }
     val getUsersByUsernameResponse = viewModel.getUsersByUsernameResponse.collectAsState()
+
+    val scope = rememberCoroutineScope()
+    val GroupNameTextField  = rememberSaveable {  mutableStateOf("default name")  }
+    val GroupDescriptionTextField = rememberSaveable { mutableStateOf("default description")}
 
     LaunchedEffect(getUsersByUsernameTextField.value) {
         viewModel.getUsersByUsername(getUsersByUsernameTextField.value)
@@ -67,7 +95,7 @@ fun GroupDetailsScreen(
             viewModel.getGroupById(groupId)
     }
 
-    Column {
+    Column (modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         if (isLoading.value) {
             Box(
                 contentAlignment = Alignment.Center,
@@ -80,6 +108,189 @@ fun GroupDetailsScreen(
             if (groupById != null) {
                 val invitations = groupById.invitations
                 val isGroupByIdCreatedByCurrentUser = groupById.owner.id == currentUserId
+
+
+                if (isOptionsSheetOpen) {
+                    ModalBottomSheet(
+                        onDismissRequest = { isOptionsSheetOpen = false },
+                        sheetState = sheetStateOptions) {
+                        TextField(
+                            value = GroupNameTextField.value,
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Info,
+                                    contentDescription = "Group name"
+                                )
+                            },
+                            onValueChange = { GroupNameTextField.value = it },
+                            label = { Text("Name") },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                        )
+                        TextField(
+                            value = GroupDescriptionTextField.value,
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Edit,
+                                    contentDescription = "Group Description"
+                                )
+                            },
+                            onValueChange = { GroupDescriptionTextField.value = it },
+                            label = { Text("Description") },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                        )
+                        Button(onClick = { scope.launch { sheetStateOptions.hide()}.invokeOnCompletion { isOptionsSheetOpen = false } }) {
+                            Text(text = "Submit changes")
+                        }
+                        Spacer(modifier = Modifier.padding(30.dp))
+                    }
+                }
+
+                if (isMembersSheetOpen) {
+                    ModalBottomSheet(
+                        onDismissRequest = { isMembersSheetOpen = false },
+                        sheetState = sheetStateMembers) {
+                        if (!addUser) {
+                            Box(
+                                contentAlignment = Alignment.Center, modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(5.dp)
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        text = "Members of ${groupById.name}",
+                                        modifier = Modifier.padding(bottom = 15.dp)
+                                    )
+                                    Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                                        val currentGroupMembersWithoutCurrentUser =
+                                            groupById.userGroups.filter { it.user.id != currentUserId }
+                                        if (currentGroupMembersWithoutCurrentUser.isEmpty()) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Filled.Info,
+                                                    contentDescription = "Empty group"
+                                                )
+                                                Text(text = "This group has no other group members yet")
+                                            }
+                                        } else {
+                                            Column {
+                                                LazyRowOfMembers(
+                                                    members = currentGroupMembersWithoutCurrentUser
+                                                ) {
+                                                    navController.navigate("${Routes.USER_DETAILS}/${it.user.id}")
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                IconButton(
+                                    onClick = { addUser = true }, modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .size(50.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Add,
+                                        contentDescription = "Add member"
+                                    )
+                                }
+                            }
+                        }
+                        else {
+                            Box(
+                                contentAlignment = Alignment.Center, modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(5.dp)
+                            ) {
+                                Column (modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+
+                                    Text(
+                                        text = "Add member to ${groupById.name}",
+                                        modifier = Modifier.padding(bottom = 15.dp)
+                                    )
+                                    TextField(
+                                        value = getUsersByUsernameTextField.value,
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Filled.Person,
+                                                contentDescription = "User By Username Search"
+                                            )
+                                        },
+                                        onValueChange = { getUsersByUsernameTextField.value = it },
+                                        label = { Text("Username") },
+                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(8.dp),
+                                    )
+                                    if (isGetUsersByUsernameLoading.value) {
+                                        CircularProgressIndicator()
+                                    } else {
+                                        getUsersByUsernameResponse.value?.users?.let {
+                                            LazyRowOfUsersToInvite(
+                                                members = groupById.userGroups,
+                                                users = it,
+                                                invited = invitations,
+                                                refreshTrigger = refreshTrigger
+                                            ) { memberClicked ->
+                                                if (groupId != null) {
+                                                    viewModel.inviteUser(
+                                                        groupId = groupId,
+                                                        userId = memberClicked.id.toString()
+                                                    )
+                                                    refreshTrigger.value++
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                IconButton(
+                                    onClick = { addUser = false }, modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .size(50.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Person,
+                                        contentDescription = "Show members"
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.padding(30.dp))
+
+                    }
+                }
+
+                Row {
+                    Button(onClick = { isOptionsSheetOpen = true }) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Outlined.Edit,
+                                contentDescription = "Edit icon"
+                            )
+                            Spacer(modifier = Modifier.padding(5.dp))
+                            Text(text = "Edit group")
+                        }
+                    }
+
+                    Button(onClick = { isMembersSheetOpen = true }) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Filled.Person,
+                                contentDescription = "Members icon"
+                            )
+                            Spacer(modifier = Modifier.padding(5.dp))
+                            Text(text = "Members")
+                        }
+                    }
+                }
+
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -109,62 +320,6 @@ fun GroupDetailsScreen(
                     }
                     if (isGroupByIdCreatedByCurrentUser)
                         Text(text = "You are the owner of this group")
-                    Card {
-                        val currentGroupMembersWithoutCurrentUser =
-                            groupById.userGroups.filter { it.user.id != currentUserId }
-                        if (currentGroupMembersWithoutCurrentUser.isEmpty()) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Info,
-                                    contentDescription = "Empty group"
-                                )
-                                Text(text = "This group has no other group members yet")
-                            }
-                        } else {
-                            Column {
-                                Text(text = "Here are the very lucky members of ${if (isGroupByIdCreatedByCurrentUser) "your" else "this"} group:")
-                                LazyRowOfMembers(
-                                    members = currentGroupMembersWithoutCurrentUser
-                                ) {
-                                    navController.navigate("${Routes.USER_DETAILS}/${it.user.id}")
-                                }
-                            }
-                        }
-                    }
-                    TextField(
-                        value = getUsersByUsernameTextField.value,
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Filled.Person,
-                                contentDescription = "User By Username Search"
-                            )
-                        },
-                        onValueChange = { getUsersByUsernameTextField.value = it },
-                        label = { Text("Username") },
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                    )
-                    if (isGetUsersByUsernameLoading.value){
-                        CircularProgressIndicator()
-                    } else {
-                        getUsersByUsernameResponse.value?.users?.let {
-                            LazyRowOfUsersToInvite(
-                                members = groupById.userGroups,
-                                users = it,
-                                invited = invitations,
-                                refreshTrigger = refreshTrigger
-                            ){memberClicked ->
-                                if (groupId != null) {
-                                    viewModel.inviteUser(groupId = groupId, userId = memberClicked.id.toString())
-                                    refreshTrigger.value++
-                                }
-                            }
-                        }
-                    }
                 }
             }
         }

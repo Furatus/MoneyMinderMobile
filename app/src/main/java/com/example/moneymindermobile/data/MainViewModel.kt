@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.exception.ApolloException
 import com.example.AcceptInvitationMutation
+import com.example.AddUserExpenseMutation
 import com.example.CreateGroupMutation
 import com.example.CreateUserMutation
 import com.example.CurrentUserQuery
@@ -16,6 +17,7 @@ import com.example.RefuseInvitationMutation
 import com.example.SignInMutation
 import com.example.UploadProfilePictureMutation
 import com.example.moneymindermobile.data.api.ApiEndpoints
+import com.example.moneymindermobile.data.api.entities.ExpenseInsertInput
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -83,6 +85,11 @@ class MainViewModel(
     private val _uploadProfilePictureResponse: MutableStateFlow<UploadProfilePictureMutation.Data?> =
         MutableStateFlow(null)
     val uploadProfilePictureResponse = _uploadProfilePictureResponse
+
+    //AddUserExpense request
+    private val _addUserExpenseResponse: MutableStateFlow<AddUserExpenseMutation.Data?> =
+        MutableStateFlow(null)
+    val addUserExpenseResponse: StateFlow<AddUserExpenseMutation.Data?> = _addUserExpenseResponse
 
     fun refreshGraphQlError() {
         viewModelScope.launch {
@@ -296,6 +303,30 @@ class MainViewModel(
                 withContext(Dispatchers.Main) {
                     _isLoading.value = false
                 }
+            }
+        }
+    }
+
+    fun addUserExpense(createUserExpense: ExpenseInsertInput) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val response = apolloClient.mutation(
+                    AddUserExpenseMutation(
+                        createUserExpense.amount,
+                        createUserExpense.description,
+                        createUserExpense.groupId,
+                        createUserExpense.userAmountList
+                    )
+                ).execute()
+                response.data.let {
+                    _addUserExpenseResponse.value = it
+                }
+                _graphQlError.value = response.errors
+            } catch (e: ApolloException) {
+                println(e)
+            } finally {
+                _isLoading.value = false
             }
         }
     }

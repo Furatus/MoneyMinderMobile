@@ -4,6 +4,7 @@ package com.example.moneymindermobile.ui.screens
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,8 +15,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -41,10 +44,11 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -56,8 +60,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.GetGroupByIdQuery
@@ -66,6 +72,7 @@ import com.example.moneymindermobile.Routes
 import com.example.moneymindermobile.data.MainViewModel
 import com.example.moneymindermobile.data.api.ApiEndpoints
 import com.example.moneymindermobile.ui.components.EntityImage
+import com.example.type.KeyValuePairOfGuidAndNullableOfDecimalInput
 import kotlinx.coroutines.launch
 
 @Composable
@@ -78,7 +85,7 @@ fun GroupDetailsScreen(
     val isGetUsersByUsernameLoading = viewModel.isGetUsersByUsernameLoading.collectAsState()
     val firstFetchDone by rememberSaveable { mutableStateOf(false) }
     val currentGroupByIdState = viewModel.groupByIdResponse.collectAsState()
-    val refreshTrigger = rememberSaveable { mutableStateOf(0) }
+    val refreshTrigger = rememberSaveable { mutableIntStateOf(0) }
 
     val sheetStateOptions = rememberModalBottomSheetState()
     var addUser by rememberSaveable { mutableStateOf(false) }
@@ -87,12 +94,14 @@ fun GroupDetailsScreen(
     val sheetStateMembers = rememberModalBottomSheetState()
     var isMembersSheetOpen by rememberSaveable { mutableStateOf(false) }
 
+    var isAddExpenseSheetOpen by rememberSaveable { mutableStateOf(false) }
+
     val getUsersByUsernameTextField = rememberSaveable { mutableStateOf("") }
     val getUsersByUsernameResponse = viewModel.getUsersByUsernameResponse.collectAsState()
 
     val scope = rememberCoroutineScope()
-    val GroupNameTextField = rememberSaveable { mutableStateOf("default name") }
-    val GroupDescriptionTextField = rememberSaveable { mutableStateOf("default description") }
+    val groupNameTextField = rememberSaveable { mutableStateOf("default name") }
+    val groupDescriptionTextField = rememberSaveable { mutableStateOf("default description") }
 
     val tabItems = listOf(
         TabItem(
@@ -110,7 +119,7 @@ fun GroupDetailsScreen(
         viewModel.getUsersByUsername(getUsersByUsernameTextField.value)
     }
 
-    LaunchedEffect(groupId, refreshTrigger.value) {
+    LaunchedEffect(groupId, refreshTrigger.intValue) {
         if (groupId != null) viewModel.getGroupById(groupId)
     }
 
@@ -134,14 +143,14 @@ fun GroupDetailsScreen(
                         sheetState = sheetStateOptions
                     ) {
                         TextField(
-                            value = GroupNameTextField.value,
+                            value = groupNameTextField.value,
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Filled.Info,
                                     contentDescription = "Group name"
                                 )
                             },
-                            onValueChange = { GroupNameTextField.value = it },
+                            onValueChange = { groupNameTextField.value = it },
                             label = { Text("Name") },
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                             modifier = Modifier
@@ -149,14 +158,14 @@ fun GroupDetailsScreen(
                                 .padding(8.dp),
                         )
                         TextField(
-                            value = GroupDescriptionTextField.value,
+                            value = groupDescriptionTextField.value,
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Filled.Edit,
                                     contentDescription = "Group Description"
                                 )
                             },
-                            onValueChange = { GroupDescriptionTextField.value = it },
+                            onValueChange = { groupDescriptionTextField.value = it },
                             label = { Text("Description") },
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                             modifier = Modifier
@@ -278,7 +287,7 @@ fun GroupDetailsScreen(
                                                         groupId = groupId,
                                                         userId = memberClicked.id.toString()
                                                     )
-                                                    refreshTrigger.value++
+                                                    refreshTrigger.intValue++
                                                 }
                                             }
                                         }
@@ -301,6 +310,11 @@ fun GroupDetailsScreen(
 
                     }
                 }
+
+                if (isAddExpenseSheetOpen) BottomSheetAddExpense(
+                    viewModel = viewModel,
+                    groupState = groupById
+                ) { isDismissed -> isAddExpenseSheetOpen = isDismissed }
 
                 Row {
                     Button(onClick = { isOptionsSheetOpen = true }) {
@@ -352,7 +366,7 @@ fun GroupDetailsScreen(
                     if (isGroupByIdCreatedByCurrentUser) Text(text = "You are the owner of this group")
 
                     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
-                    val pagerState = rememberPagerState(pageCount =  {tabItems.size})
+                    val pagerState = rememberPagerState(pageCount = { tabItems.size })
 
                     LaunchedEffect(pagerState.currentPage) {
 
@@ -378,16 +392,32 @@ fun GroupDetailsScreen(
                                 })
                         }
                     }
-                    
-                    HorizontalPager(state = pagerState, modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight()
-                        .weight(1f)) { index ->
+
+                    HorizontalPager(
+                        state = pagerState, modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight()
+                            .weight(1f)
+                    ) { index ->
                         run {
                             if (index == 0) {
-                                Box(modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(5.dp)) {
-                                    Button(onClick = { /*TODO*/ }, modifier = Modifier.size(50.dp).align(Alignment.BottomCenter), contentPadding = PaddingValues(1.dp)) {
-                                        Icon(imageVector = Icons.Filled.Add, contentDescription = "Add Expense")
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .fillMaxHeight()
+                                        .padding(5.dp)
+                                ) {
+                                    Button(
+                                        onClick = { isAddExpenseSheetOpen = true },
+                                        modifier = Modifier
+                                            .size(50.dp)
+                                            .align(Alignment.BottomCenter),
+                                        contentPadding = PaddingValues(1.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Add,
+                                            contentDescription = "Add Expense"
+                                        )
                                     }
                                 }
                             }
@@ -409,7 +439,7 @@ fun LazyRowOfUsersToInvite(
     members: List<GetGroupByIdQuery.UserGroup>,
     users: List<GetUsersByUsernameQuery.User>,
     invited: List<GetGroupByIdQuery.Invitation>,
-    refreshTrigger: MutableState<Int>,
+    refreshTrigger: MutableIntState,
     onMemberClicked: (GetUsersByUsernameQuery.User) -> Unit
 ) {
     val memberIds = members.map { it.user.id }
@@ -467,6 +497,111 @@ fun GroupMemberCard(
     }
 }
 
+@Composable
+fun BottomSheetAddExpense(
+    viewModel: MainViewModel,
+    groupState: GetGroupByIdQuery.GroupById,
+    onSheetDismissed: (Boolean) -> Unit
+) {
+    val sheetStateAddExpense = rememberModalBottomSheetState()
+    var ExpenseTitleTextField = rememberSaveable { mutableStateOf("") }
+    val datePickerState = rememberDatePickerState();
+    var isDatePickerOpen = rememberSaveable { mutableStateOf(false) }
+
+    ModalBottomSheet(
+        onDismissRequest = { onSheetDismissed(false) },
+        sheetState = sheetStateAddExpense
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = "Add Expense", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            TextField(
+                value = ExpenseTitleTextField.value,
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Info,
+                        contentDescription = "Description"
+                    )
+                },
+                onValueChange = { ExpenseTitleTextField.value = it },
+                label = { Text("Description") },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+            )
+
+            TextField(
+                value = ExpenseTitleTextField.value,
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Info,
+                        contentDescription = "Total Amount"
+                    )
+                },
+                onValueChange = { ExpenseTitleTextField.value = it },
+                label = { Text("Total Amount") },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            )
+            //DatePickerDialog(onDismissRequest = {}, confirmButton = {}) { DatePicker(state = datePickerState)}
+            Text(text = "Sharing", modifier = Modifier.padding(8.dp))
+            var expenseList: List<KeyValuePairOfGuidAndNullableOfDecimalInput> = emptyList()
+
+            AddExpenseUserList(groupState = groupState, expenseList) { list ->
+                expenseList = list
+            }
+
+
+        }
+        Spacer(modifier = Modifier.padding(30.dp))
+    }
+}
+
 data class TabItem(
     val title: String, val unselectedIcon: ImageVector, val selectedIcon: ImageVector
 )
+
+@Composable
+fun AddExpenseUserList(
+    groupState: GetGroupByIdQuery.GroupById,
+    expenseList: List<KeyValuePairOfGuidAndNullableOfDecimalInput>,
+    expenseDetailsList: (List<KeyValuePairOfGuidAndNullableOfDecimalInput>) -> Unit
+) {
+    val members = groupState.userGroups
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        itemsIndexed(members) {index, member ->
+            //var amountUserInput by rememberSaveable { mutableStateOf("") }
+            val currentValue = expenseList.getOrNull(index)?.value?.toString() ?: ""
+            var amountUserInput by rememberSaveable { mutableStateOf(currentValue) }
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                Card(modifier = Modifier.fillMaxWidth(0.7f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        EntityImage(imageLink = member.user.avatarUrl, title = member.user.userName)
+                        member.user.userName?.let { Text(text = it) }
+                    }
+                }
+                Spacer(modifier = Modifier.padding(10.dp))
+                TextField(value = amountUserInput , onValueChange = { newValue ->
+                    amountUserInput = newValue
+                    val newExpenseList = expenseList.toMutableList()
+                    newExpenseList[index] = KeyValuePairOfGuidAndNullableOfDecimalInput(
+                        key = member.user.id,
+                        value = newValue.toFloatOrNull()
+                    )
+                    expenseDetailsList(newExpenseList)
+                }, modifier = Modifier.fillMaxWidth() )
+            }
+            Spacer(modifier = Modifier.padding(8.dp))
+        }
+    }
+}

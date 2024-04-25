@@ -1,0 +1,12 @@
+mutation AddUserExpense($amount:Decimal!, $description:String!, $groupid:UUID!, $userAmountsList:[KeyValuePairOfGuidAndNullableOfDecimalInput!]!){
+    addUserExpense(expenseInsertInput: {
+        amount:$amount
+        description:$description
+        groupId: $groupid
+        userAmountsList: $userAmountsList
+    }){
+        amount
+
+    }
+
+}

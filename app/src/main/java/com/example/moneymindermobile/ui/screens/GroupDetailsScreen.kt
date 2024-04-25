@@ -1,4 +1,6 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
+    ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class
+)
 
 package com.example.moneymindermobile.ui.screens
 
@@ -72,6 +74,7 @@ import com.example.moneymindermobile.Routes
 import com.example.moneymindermobile.data.MainViewModel
 import com.example.moneymindermobile.data.api.ApiEndpoints
 import com.example.moneymindermobile.ui.components.EntityImage
+import com.example.moneymindermobile.ui.components.camera.Camera
 import com.example.type.KeyValuePairOfGuidAndNullableOfDecimalInput
 import kotlinx.coroutines.launch
 
@@ -422,7 +425,8 @@ fun GroupDetailsScreen(
                                 }
                             }
                             if (index == 1) {
-                                Text(text = "I'm another custom text")
+                                //Text(text = "I'm another custom text")
+                                Camera()
                             }
                         }
 
@@ -505,7 +509,7 @@ fun BottomSheetAddExpense(
 ) {
     val sheetStateAddExpense = rememberModalBottomSheetState()
     var ExpenseTitleTextField = rememberSaveable { mutableStateOf("") }
-    val datePickerState = rememberDatePickerState();
+    val datePickerState = rememberDatePickerState()
     var isDatePickerOpen = rememberSaveable { mutableStateOf(false) }
 
     ModalBottomSheet(
@@ -556,6 +560,9 @@ fun BottomSheetAddExpense(
                 expenseList = list
             }
 
+            Text(text = "Justification", modifier = Modifier.padding(8.dp))
+
+
 
         }
         Spacer(modifier = Modifier.padding(30.dp))
@@ -579,26 +586,20 @@ fun AddExpenseUserList(
             .padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally
     ) {
         itemsIndexed(members) {index, member ->
-            //var amountUserInput by rememberSaveable { mutableStateOf("") }
-            val currentValue = expenseList.getOrNull(index)?.value?.toString() ?: ""
-            var amountUserInput by rememberSaveable { mutableStateOf(currentValue) }
+            var amountUserInput by rememberSaveable { mutableStateOf("") }
+            //val currentValue = expenseList.getOrNull(index)?.value?.toString() ?: ""
+            //var amountUserInput by rememberSaveable { mutableStateOf(currentValue) }
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                 Card(modifier = Modifier.fillMaxWidth(0.7f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         EntityImage(imageLink = member.user.avatarUrl, title = member.user.userName)
                         member.user.userName?.let { Text(text = it) }
+                        Text(text = "${index}")
                     }
                 }
                 Spacer(modifier = Modifier.padding(10.dp))
-                TextField(value = amountUserInput , onValueChange = { newValue ->
-                    amountUserInput = newValue
-                    val newExpenseList = expenseList.toMutableList()
-                    newExpenseList[index] = KeyValuePairOfGuidAndNullableOfDecimalInput(
-                        key = member.user.id,
-                        value = newValue.toFloatOrNull()
-                    )
-                    expenseDetailsList(newExpenseList)
+                TextField(value = amountUserInput , onValueChange = { amountUserInput = it
                 }, modifier = Modifier.fillMaxWidth() )
             }
             Spacer(modifier = Modifier.padding(8.dp))

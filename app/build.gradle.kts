@@ -101,6 +101,9 @@ dependencies {
 
     implementation(libs.accompanist.permissions)
 
+    //file picker
+    implementation(libs.mpfilepicker)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

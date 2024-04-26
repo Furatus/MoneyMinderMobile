@@ -1,10 +1,17 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
+@file:OptIn(
+    ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
     ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class
 )
 
 package com.example.moneymindermobile.ui.screens
 
+import android.content.ContentResolver
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -60,23 +67,30 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.darkrockstudios.libraries.mpfilepicker.FilePicker
 import com.example.GetGroupByIdQuery
 import com.example.GetUsersByUsernameQuery
 import com.example.moneymindermobile.Routes
 import com.example.moneymindermobile.data.MainViewModel
 import com.example.moneymindermobile.data.api.ApiEndpoints
 import com.example.moneymindermobile.ui.components.EntityImage
-import com.example.moneymindermobile.ui.components.camera.Camera
 import com.example.type.KeyValuePairOfGuidAndNullableOfDecimalInput
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.io.InputStream
 
 @Composable
 fun GroupDetailsScreen(
@@ -103,6 +117,7 @@ fun GroupDetailsScreen(
     val getUsersByUsernameResponse = viewModel.getUsersByUsernameResponse.collectAsState()
 
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     val groupNameTextField = rememberSaveable { mutableStateOf("default name") }
     val groupDescriptionTextField = rememberSaveable { mutableStateOf("default description") }
 
@@ -410,6 +425,17 @@ fun GroupDetailsScreen(
                                         .fillMaxHeight()
                                         .padding(5.dp)
                                 ) {
+                                    if (groupById.expenses.isEmpty()) {
+                                        Column(
+                                            modifier = Modifier.fillMaxSize(),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.Center
+                                        ) {
+                                            Text(text = "This group has no expenses, but you can add one !")
+                                        }
+
+
+                                    }
                                     Button(
                                         onClick = { isAddExpenseSheetOpen = true },
                                         modifier = Modifier
@@ -426,7 +452,37 @@ fun GroupDetailsScreen(
                             }
                             if (index == 1) {
                                 //Text(text = "I'm another custom text")
-                                Camera()
+                                //Camera()
+                                var showFilePicker by rememberSaveable { mutableStateOf(false) }
+                                var imagebyteArray by rememberSaveable { mutableStateOf(byteArrayOf()) }
+
+                                val fileType = listOf("jpg", "png")
+                                FilePicker(
+                                    show = showFilePicker,
+                                    fileExtensions = fileType
+                                ) { platformFile ->
+                                    showFilePicker = false
+                                    if (platformFile != null) scope.launch {
+                                        imagebyteArray =
+                                            readBytesFromUri(context, Uri.parse(platformFile.path))!!
+                                        //Log.d("image_bytearray", "${imagebyteArray.isEmpty()}")
+                                        //Log.d("bytearray", imagebyteArray.decodeToString())
+                                    }
+
+                                }
+                                Column {
+                                    Button(onClick = { showFilePicker = true }) {
+                                        Text(text = "Choose File")
+                                    }
+                                    if (imagebyteArray.isEmpty()) Text(text = "No image picked")
+                                    else {
+                                        val bitmapImage = convertImageByteArrayToBitmap(imagebyteArray)
+                                            Image(
+                                                bitmap = bitmapImage.asImageBitmap(),
+                                                contentDescription = "User file"
+                                            )
+                                    }
+                                }
                             }
                         }
 
@@ -563,7 +619,6 @@ fun BottomSheetAddExpense(
             Text(text = "Justification", modifier = Modifier.padding(8.dp))
 
 
-
         }
         Spacer(modifier = Modifier.padding(30.dp))
     }
@@ -585,7 +640,7 @@ fun AddExpenseUserList(
             .fillMaxWidth()
             .padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        itemsIndexed(members) {index, member ->
+        itemsIndexed(members) { index, member ->
             var amountUserInput by rememberSaveable { mutableStateOf("") }
             //val currentValue = expenseList.getOrNull(index)?.value?.toString() ?: ""
             //var amountUserInput by rememberSaveable { mutableStateOf(currentValue) }
@@ -599,10 +654,44 @@ fun AddExpenseUserList(
                     }
                 }
                 Spacer(modifier = Modifier.padding(10.dp))
-                TextField(value = amountUserInput , onValueChange = { amountUserInput = it
-                }, modifier = Modifier.fillMaxWidth() )
+                TextField(value = amountUserInput, onValueChange = {
+                    amountUserInput = it
+                }, modifier = Modifier.fillMaxWidth())
             }
             Spacer(modifier = Modifier.padding(8.dp))
+        }
+    }
+}
+
+fun convertImageByteArrayToBitmap(imageData: ByteArray): Bitmap {
+    return BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
+}
+
+suspend fun readBytesFromUri(context: Context, uri: Uri): ByteArray? {
+    return withContext(Dispatchers.IO) {
+        var inputStream: InputStream? = null
+        var byteArrayOutputStream: ByteArrayOutputStream? = null
+        try {
+            val contentResolver: ContentResolver = context.contentResolver
+            inputStream = contentResolver.openInputStream(uri)
+            byteArrayOutputStream = ByteArrayOutputStream()
+            val buffer = ByteArray(1024)
+            var length: Int
+            while (inputStream?.read(buffer).also { length = it!! } != -1) {
+                byteArrayOutputStream.write(buffer, 0, length)
+            }
+            byteArrayOutputStream.flush()
+            byteArrayOutputStream.toByteArray()
+        } catch (e: IOException) {
+            e.printStackTrace()
+            null
+        } finally {
+            try {
+                inputStream?.close()
+                byteArrayOutputStream?.close()
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
         }
     }
 }

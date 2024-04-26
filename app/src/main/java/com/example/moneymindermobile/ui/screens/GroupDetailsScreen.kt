@@ -7,6 +7,7 @@
 package com.example.moneymindermobile.ui.screens
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -65,6 +66,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -80,6 +82,7 @@ import com.example.moneymindermobile.data.MainViewModel
 import com.example.moneymindermobile.data.api.ApiEndpoints
 import com.example.moneymindermobile.ui.components.EntityImage
 import com.example.moneymindermobile.ui.components.FilePickingOrCamera
+import com.example.moneymindermobile.ui.components.convertImageByteArrayToBitmap
 import com.example.type.KeyValuePairOfGuidAndNullableOfDecimalInput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -638,8 +641,21 @@ fun BottomSheetAddExpense(
                     }
                 }
                 if (index == 1) {
-                    FilePickingOrCamera(listOf("jpg", "png", "pdf")) {outputArray ->
-                        byteArrayJustification = outputArray
+                    Column {
+                        Spacer(modifier = Modifier.padding(8.dp))
+                        FilePickingOrCamera(listOf("jpg", "png", "pdf")) { outputArray ->
+                            byteArrayJustification = outputArray
+                        }
+                        if (byteArrayJustification?.isEmpty() == false) {
+                            val bitmapImage =
+                                byteArrayJustification?.let { convertImageByteArrayToBitmap(it) }
+                            if (bitmapImage != null) {
+                                Image(
+                                    bitmap = bitmapImage.asImageBitmap(),
+                                    contentDescription = "User file"
+                                )
+                            }
+                        }
                     }
                 }
             }

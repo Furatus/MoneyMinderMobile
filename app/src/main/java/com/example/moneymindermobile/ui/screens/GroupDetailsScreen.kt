@@ -1,17 +1,12 @@
 @file:OptIn(
     ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
-    ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class
+    ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3Api::class
 )
 
 package com.example.moneymindermobile.ui.screens
 
-import android.content.ContentResolver
-import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,13 +30,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.ArrowForward
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ExitToApp
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -67,30 +65,24 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.darkrockstudios.libraries.mpfilepicker.FilePicker
 import com.example.GetGroupByIdQuery
 import com.example.GetUsersByUsernameQuery
 import com.example.moneymindermobile.Routes
 import com.example.moneymindermobile.data.MainViewModel
 import com.example.moneymindermobile.data.api.ApiEndpoints
 import com.example.moneymindermobile.ui.components.EntityImage
+import com.example.moneymindermobile.ui.components.FilePickingOrCamera
 import com.example.type.KeyValuePairOfGuidAndNullableOfDecimalInput
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.ByteArrayOutputStream
-import java.io.IOException
-import java.io.InputStream
 
 @Composable
 fun GroupDetailsScreen(
@@ -104,11 +96,11 @@ fun GroupDetailsScreen(
     val currentGroupByIdState = viewModel.groupByIdResponse.collectAsState()
     val refreshTrigger = rememberSaveable { mutableIntStateOf(0) }
 
-    val sheetStateOptions = rememberModalBottomSheetState()
+    val sheetStateOptions = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var addUser by rememberSaveable { mutableStateOf(false) }
     var isOptionsSheetOpen by rememberSaveable { mutableStateOf(false) }
 
-    val sheetStateMembers = rememberModalBottomSheetState()
+    val sheetStateMembers = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var isMembersSheetOpen by rememberSaveable { mutableStateOf(false) }
 
     var isAddExpenseSheetOpen by rememberSaveable { mutableStateOf(false) }
@@ -117,7 +109,6 @@ fun GroupDetailsScreen(
     val getUsersByUsernameResponse = viewModel.getUsersByUsernameResponse.collectAsState()
 
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
     val groupNameTextField = rememberSaveable { mutableStateOf("default name") }
     val groupDescriptionTextField = rememberSaveable { mutableStateOf("default description") }
 
@@ -331,7 +322,8 @@ fun GroupDetailsScreen(
 
                 if (isAddExpenseSheetOpen) BottomSheetAddExpense(
                     viewModel = viewModel,
-                    groupState = groupById
+                    groupState = groupById,
+                    scope = scope
                 ) { isDismissed -> isAddExpenseSheetOpen = isDismissed }
 
                 Row {
@@ -451,38 +443,8 @@ fun GroupDetailsScreen(
                                 }
                             }
                             if (index == 1) {
-                                //Text(text = "I'm another custom text")
-                                //Camera()
-                                var showFilePicker by rememberSaveable { mutableStateOf(false) }
-                                var imagebyteArray by rememberSaveable { mutableStateOf(byteArrayOf()) }
+                                Text(text = "I'm another custom text")
 
-                                val fileType = listOf("jpg", "png")
-                                FilePicker(
-                                    show = showFilePicker,
-                                    fileExtensions = fileType
-                                ) { platformFile ->
-                                    showFilePicker = false
-                                    if (platformFile != null) scope.launch {
-                                        imagebyteArray =
-                                            readBytesFromUri(context, Uri.parse(platformFile.path))!!
-                                        //Log.d("image_bytearray", "${imagebyteArray.isEmpty()}")
-                                        //Log.d("bytearray", imagebyteArray.decodeToString())
-                                    }
-
-                                }
-                                Column {
-                                    Button(onClick = { showFilePicker = true }) {
-                                        Text(text = "Choose File")
-                                    }
-                                    if (imagebyteArray.isEmpty()) Text(text = "No image picked")
-                                    else {
-                                        val bitmapImage = convertImageByteArrayToBitmap(imagebyteArray)
-                                            Image(
-                                                bitmap = bitmapImage.asImageBitmap(),
-                                                contentDescription = "User file"
-                                            )
-                                    }
-                                }
                             }
                         }
 
@@ -561,64 +523,126 @@ fun GroupMemberCard(
 fun BottomSheetAddExpense(
     viewModel: MainViewModel,
     groupState: GetGroupByIdQuery.GroupById,
+    scope: CoroutineScope,
     onSheetDismissed: (Boolean) -> Unit
 ) {
-    val sheetStateAddExpense = rememberModalBottomSheetState()
+    val sheetStateAddExpense = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var ExpenseTitleTextField = rememberSaveable { mutableStateOf("") }
     val datePickerState = rememberDatePickerState()
     var isDatePickerOpen = rememberSaveable { mutableStateOf(false) }
+    var byteArrayJustification : ByteArray? by rememberSaveable {
+        mutableStateOf(
+            byteArrayOf()
+        )
+    }
+
+    val tabItems = listOf(
+        TabItem(
+            title = "Expense Info",
+            unselectedIcon = Icons.Outlined.Info,
+            selectedIcon = Icons.Filled.Info
+        ), TabItem(
+            title = "Justification",
+            unselectedIcon = Icons.Outlined.CheckCircle,
+            selectedIcon = Icons.Filled.CheckCircle
+        )
+    )
 
     ModalBottomSheet(
         onDismissRequest = { onSheetDismissed(false) },
         sheetState = sheetStateAddExpense
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(text = "Add Expense", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            TextField(
-                value = ExpenseTitleTextField.value,
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Filled.Info,
-                        contentDescription = "Description"
-                    )
-                },
-                onValueChange = { ExpenseTitleTextField.value = it },
-                label = { Text("Description") },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-            )
+        var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
+        val pagerState = rememberPagerState(pageCount = { tabItems.size })
 
-            TextField(
-                value = ExpenseTitleTextField.value,
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Filled.Info,
-                        contentDescription = "Total Amount"
-                    )
-                },
-                onValueChange = { ExpenseTitleTextField.value = it },
-                label = { Text("Total Amount") },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-            )
-            //DatePickerDialog(onDismissRequest = {}, confirmButton = {}) { DatePicker(state = datePickerState)}
-            Text(text = "Sharing", modifier = Modifier.padding(8.dp))
-            var expenseList: List<KeyValuePairOfGuidAndNullableOfDecimalInput> = emptyList()
+        LaunchedEffect(pagerState.currentPage) {
 
-            AddExpenseUserList(groupState = groupState, expenseList) { list ->
-                expenseList = list
+            selectedTabIndex = pagerState.currentPage
+        }
+
+        TabRow(selectedTabIndex = selectedTabIndex) {
+            tabItems.forEachIndexed { index, item ->
+                Tab(selected = index == selectedTabIndex, onClick = {
+                    scope.launch {
+                        pagerState.animateScrollToPage(index)
+                    }
+                    selectedTabIndex = index
+                },
+                    text = {
+                        Text(text = item.title)
+                    },
+                    icon = {
+                        Icon(
+                            imageVector = if (index == selectedTabIndex) item.selectedIcon else item.unselectedIcon,
+                            contentDescription = "${item.title} Icon"
+                        )
+                    })
             }
+        }
 
-            Text(text = "Justification", modifier = Modifier.padding(8.dp))
+        HorizontalPager(
+            state = pagerState, modifier = Modifier
+                .fillMaxWidth()
+        ) { index ->
+            run {
+                if (index == 0) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Add Expense",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                        TextField(
+                            value = ExpenseTitleTextField.value,
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Info,
+                                    contentDescription = "Description"
+                                )
+                            },
+                            onValueChange = { ExpenseTitleTextField.value = it },
+                            label = { Text("Description") },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                        )
 
+                        TextField(
+                            value = ExpenseTitleTextField.value,
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Info,
+                                    contentDescription = "Total Amount"
+                                )
+                            },
+                            onValueChange = { ExpenseTitleTextField.value = it },
+                            label = { Text("Total Amount") },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp)
+                        )
+                        //DatePickerDialog(onDismissRequest = {}, confirmButton = {}) { DatePicker(state = datePickerState)}
+                        Text(text = "Sharing", modifier = Modifier.padding(8.dp))
+                        var expenseList: List<KeyValuePairOfGuidAndNullableOfDecimalInput> =
+                            emptyList()
 
+                        AddExpenseUserList(groupState = groupState, expenseList) { list ->
+                            expenseList = list
+                        }
+                    }
+                }
+                if (index == 1) {
+                    FilePickingOrCamera(listOf("jpg", "png", "pdf")) {outputArray ->
+                        byteArrayJustification = outputArray
+                    }
+                }
+            }
         }
         Spacer(modifier = Modifier.padding(30.dp))
     }
@@ -659,39 +683,6 @@ fun AddExpenseUserList(
                 }, modifier = Modifier.fillMaxWidth())
             }
             Spacer(modifier = Modifier.padding(8.dp))
-        }
-    }
-}
-
-fun convertImageByteArrayToBitmap(imageData: ByteArray): Bitmap {
-    return BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
-}
-
-suspend fun readBytesFromUri(context: Context, uri: Uri): ByteArray? {
-    return withContext(Dispatchers.IO) {
-        var inputStream: InputStream? = null
-        var byteArrayOutputStream: ByteArrayOutputStream? = null
-        try {
-            val contentResolver: ContentResolver = context.contentResolver
-            inputStream = contentResolver.openInputStream(uri)
-            byteArrayOutputStream = ByteArrayOutputStream()
-            val buffer = ByteArray(1024)
-            var length: Int
-            while (inputStream?.read(buffer).also { length = it!! } != -1) {
-                byteArrayOutputStream.write(buffer, 0, length)
-            }
-            byteArrayOutputStream.flush()
-            byteArrayOutputStream.toByteArray()
-        } catch (e: IOException) {
-            e.printStackTrace()
-            null
-        } finally {
-            try {
-                inputStream?.close()
-                byteArrayOutputStream?.close()
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
         }
     }
 }

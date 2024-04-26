@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment.Companion.BottomStart
@@ -48,7 +49,8 @@ import java.util.concurrent.Executor
 
 @Composable
 fun CameraScreen(
-    viewModel: CameraViewModel
+    viewModel: CameraViewModel,
+    takenPicture : (Bitmap?) -> Unit
 ) {
     val cameraState: CameraState by viewModel.state.collectAsStateWithLifecycle()
 
@@ -56,6 +58,9 @@ fun CameraScreen(
         onPhotoCaptured = viewModel::storePhotoInGallery,
         lastCapturedPhoto = cameraState.capturedImage
     )
+    LaunchedEffect(key1 = cameraState.capturedImage) {
+        takenPicture(cameraState.capturedImage)
+    }
 }
 
 @Composable

@@ -93,17 +93,7 @@ fun FilePickingOrCamera(fileType: List<String>, outputByteArray: (ByteArray?) ->
                 LaunchedEffect(imagebyteArray) {
                     if (imagebyteArray?.size != 0) isFileChosenOrPictureTaken = true
                 }
-                /*if (imagebyteArray?.isEmpty() == true) Text(text = "No image picked")
-        else {
-            val bitmapImage =
-                imagebyteArray?.let { convertImageByteArrayToBitmap(it) }
-            if (bitmapImage != null) {
-                Image(
-                    bitmap = bitmapImage.asImageBitmap(),
-                    contentDescription = "User file"
-                )
-            }
-        }*/
+
             }
         } else {
             Box(
@@ -116,7 +106,10 @@ fun FilePickingOrCamera(fileType: List<String>, outputByteArray: (ByteArray?) ->
 
                 Column(verticalArrangement = Arrangement.Center) {
                     Button(
-                        onClick = { isTakingPicture = false }, modifier = Modifier
+                        onClick = {
+                            isTakingPicture = false
+                            isFileChosenOrPictureTaken = false
+                        }, modifier = Modifier
                             .size(50.dp), contentPadding = PaddingValues(1.dp)
                     ) {
                         Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Go back")
@@ -129,7 +122,6 @@ fun FilePickingOrCamera(fileType: List<String>, outputByteArray: (ByteArray?) ->
 
                 LaunchedEffect(imagebyteArray) {
                     if (imagebyteArray?.size != 0 && imagebyteArray != null) {
-                        //imagebyteArray?.let { Log.d("byte", it.decodeToString()) }
                         isTakingPicture = false
                         isFileChosenOrPictureTaken = true
                     }
@@ -142,7 +134,7 @@ fun FilePickingOrCamera(fileType: List<String>, outputByteArray: (ByteArray?) ->
             isFileChosenOrPictureTaken = false
             outputByteArray(byteArrayOf())
         }, modifier = Modifier.fillMaxWidth()) {
-            Row (horizontalArrangement = Arrangement.Center) {
+            Row(horizontalArrangement = Arrangement.Center) {
                 Icon(imageVector = Icons.Filled.Delete, contentDescription = "Delete Justification")
                 Text(text = "Delete Justification", modifier = Modifier.padding(8.dp))
             }

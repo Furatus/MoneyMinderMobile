@@ -1,0 +1,3 @@
+mutation uploadGroupImagePicture( $groupId : UUID!){
+    uploadGroupImagePicture(groupId: $groupId)
+}

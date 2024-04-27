@@ -1,5 +1,6 @@
 package com.example.moneymindermobile.data
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.apollographql.apollo3.ApolloClient
@@ -15,6 +16,7 @@ import com.example.GetUsersByUsernameQuery
 import com.example.InviteUserMutation
 import com.example.RefuseInvitationMutation
 import com.example.SignInMutation
+import com.example.UploadGroupImagePictureMutation
 import com.example.UploadProfilePictureMutation
 import com.example.moneymindermobile.data.api.ApiEndpoints
 import com.example.moneymindermobile.data.api.entities.ExpenseInsertInput
@@ -23,11 +25,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.Call
+import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.Response
 import java.io.File
 import java.io.IOException
 
@@ -90,6 +96,12 @@ class MainViewModel(
     private val _addUserExpenseResponse: MutableStateFlow<AddUserExpenseMutation.Data?> =
         MutableStateFlow(null)
     val addUserExpenseResponse: StateFlow<AddUserExpenseMutation.Data?> = _addUserExpenseResponse
+
+    //Upload image group
+    private val  _uploadGroupPictureResponse : MutableStateFlow<UploadGroupImagePictureMutation.Data?> = MutableStateFlow(null)
+    val uploadGroupImagePictureMutation = _uploadGroupPictureResponse
+
+
 
     fun refreshGraphQlError() {
         viewModelScope.launch {
@@ -330,4 +342,63 @@ class MainViewModel(
             }
         }
     }
+    fun uploadGroupImagePicture(groupId: String, imageByteArray: ByteArray) {
+
+        val fileExtension = determineFileExtension(imageByteArray)
+
+        viewModelScope.launch(Dispatchers.IO) {
+            println("uploading profile picture")
+            _isLoading.value = true
+            try {
+                // Step 1: Execute the UploadProfilePicture mutation to get the unique upload link
+                val uploadLinkResponse =
+                    apolloClient.mutation(UploadGroupImagePictureMutation(groupId)).execute()
+                var uploadLink : String? = uploadLinkResponse.data?.uploadGroupImagePicture ?: ""
+                uploadLink?.let { Log.d("link", it) }
+                uploadLink = uploadLink?.replace("localhost", ApiEndpoints.API_ADDRESS)
+
+                val requestBody =
+                    MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart(
+                        "file",
+                        "groupImage_${groupId}.${fileExtension}",
+                              RequestBody.create("image/${fileExtension}".toMediaTypeOrNull(), imageByteArray)
+                    ).build()
+
+                val request = Request.Builder().url(uploadLink!!).post(requestBody).build()
+
+                okHttpClient.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e("Http-Error", "Erreur lors de la requête : ${e.message}")
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        val responseCode = response.code
+
+                        when (responseCode) {
+                            200 -> {Log.d("http-response","Successfully uploaded picture : ${response.body?.string()}")}
+                            500 -> {Log.d("http-response", "internal Error : ${response.body?.string()}")}
+                        }
+                    }
+                })
+            } catch (e: ApolloException) {
+                println("ApolloException: $e")
+            } catch (e: IOException) {
+                println("IOException: $e")
+            } finally {
+                withContext(Dispatchers.Main) {
+                    _isLoading.value = false
+                }
+            }
+        }
+    }
+
+    fun determineFileExtension(bytes: ByteArray): String? {
+        return when {
+            bytes.size >= 2 && bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte() -> "jpg"
+            bytes.size >= 3 && bytes[0] == 0x89.toByte() && bytes[1] == 0x50.toByte() && bytes[2] == 0x4E.toByte() -> "png"
+            bytes.size >= 4 && bytes[0] == 0x25.toByte() && bytes[1] == 0x50.toByte() && bytes[2] == 0x44.toByte() && bytes[3] == 0x46.toByte() -> "pdf"
+            else -> null
+        }
+    }
+
 }

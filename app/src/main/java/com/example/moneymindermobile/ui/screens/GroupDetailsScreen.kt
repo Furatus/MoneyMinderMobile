@@ -1,7 +1,7 @@
 @file:OptIn(
     ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
     ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3Api::class
+    ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class
 )
 
 package com.example.moneymindermobile.ui.screens
@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,17 +23,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
@@ -69,11 +70,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -159,42 +160,135 @@ fun GroupDetailsScreen(
                         onDismissRequest = { isOptionsSheetOpen = false },
                         sheetState = sheetStateOptions
                     ) {
-                        TextField(
-                            value = groupNameTextField.value,
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Filled.Info,
-                                    contentDescription = "Group name"
-                                )
-                            },
-                            onValueChange = { groupNameTextField.value = it },
-                            label = { Text("Name") },
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                        )
-                        TextField(
-                            value = groupDescriptionTextField.value,
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Filled.Edit,
-                                    contentDescription = "Group Description"
-                                )
-                            },
-                            onValueChange = { groupDescriptionTextField.value = it },
-                            label = { Text("Description") },
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                        )
-                        Button(onClick = {
-                            scope.launch { sheetStateOptions.hide() }
-                                .invokeOnCompletion { isOptionsSheetOpen = false }
-                        }) {
-                            Text(text = "Submit changes")
+                        var isChangingPicture by rememberSaveable { mutableStateOf(false) }
+                        var imageByteArray: ByteArray? by rememberSaveable {
+                            mutableStateOf(
+                                byteArrayOf()
+                            )
                         }
+
+                        if (!isChangingPicture) {
+
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+
+
+                                Card(
+                                    onClick = {
+                                        isChangingPicture = true
+                                        imageByteArray = byteArrayOf()
+                                    },
+                                    modifier = Modifier
+                                        .size(64.dp)
+                                        .padding(0.dp)
+                                ) {
+                                    if (groupById.groupImageUrl.isNullOrEmpty() && (imageByteArray?.size == 0 || imageByteArray == null)) {
+                                        Icon(
+                                            imageVector = Icons.Filled.AccountBox,
+                                            contentDescription = "${groupById.name} default image",
+                                            modifier = Modifier.size(64.dp)
+                                        )
+                                    } else {
+                                        if (!groupById.groupImageUrl.isNullOrEmpty()) {
+                                            AsyncImage(
+                                                model = groupById.groupImageUrl.replace(
+                                                    "localhost", ApiEndpoints.API_ADDRESS
+                                                ),
+                                                contentDescription = "${groupById.name} avatar",
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.size(64.dp)
+                                            )
+                                        } else {
+                                            val bitmapImage =
+                                                imageByteArray?.let {
+                                                    convertImageByteArrayToBitmap(
+                                                        it
+                                                    )
+                                                }
+
+                                            if (bitmapImage != null) {
+
+                                                Spacer(modifier = Modifier.padding(8.dp))
+                                                Image(
+                                                    bitmap = bitmapImage.asImageBitmap(),
+                                                    contentDescription = "User file",
+                                                    modifier = Modifier
+                                                        .fillMaxSize()
+                                                        .aspectRatio(1f)
+                                                        .clip(shape = RoundedCornerShape(8.dp)),
+                                                    contentScale = ContentScale.Crop
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.padding(8.dp))
+
+                                TextField(
+                                    value = groupNameTextField.value,
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Filled.Info,
+                                            contentDescription = "Group name"
+                                        )
+                                    },
+                                    onValueChange = { groupNameTextField.value = it },
+                                    label = { Text("Name") },
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp),
+                                )
+                                TextField(
+                                    value = groupDescriptionTextField.value,
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Filled.Edit,
+                                            contentDescription = "Group Description"
+                                        )
+                                    },
+                                    onValueChange = { groupDescriptionTextField.value = it },
+                                    label = { Text("Description") },
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp),
+                                )
+                                Button(onClick = {
+                                    scope.launch { sheetStateOptions.hide() }
+                                        .invokeOnCompletion {
+                                            isOptionsSheetOpen = false
+                                            if (imageByteArray?.size != 0 && imageByteArray != null) {
+                                                val group: String = groupId!!
+                                                viewModel.uploadGroupImagePicture(
+                                                    groupId = group,
+                                                    imageByteArray!!
+                                                )
+                                            }
+                                        }
+                                }) {
+                                    Text(text = "Submit changes")
+                                }
+                            }
+                        } else {
+                            FilePickingOrCamera(
+                                fileType = listOf(
+                                    "png",
+                                    "jpg",
+                                    "jpeg"
+                                )
+                            ) { outputByteArray ->
+                                imageByteArray = outputByteArray
+                            }
+
+                            LaunchedEffect(key1 = imageByteArray) {
+                                if (imageByteArray?.size != 0 && imageByteArray != null) {
+                                    isChangingPicture = false
+                                }
+                            }
+
+                        }
+
                         Spacer(modifier = Modifier.padding(30.dp))
                     }
                 }
@@ -335,6 +429,16 @@ fun GroupDetailsScreen(
                 ) { isDismissed -> isAddExpenseSheetOpen = isDismissed }
 
                 Row {
+                    Button(
+                        onClick = { navController.navigate(route = Routes.HOME) },
+                        contentPadding = PaddingValues(1.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Go Back to Home"
+                        )
+                    }
+                    Spacer(modifier = Modifier.padding(5.dp))
                     Button(onClick = { isOptionsSheetOpen = true }) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
@@ -542,7 +646,7 @@ fun BottomSheetAddExpense(
     var ExpenseTitleTextField = rememberSaveable { mutableStateOf("") }
     val datePickerState = rememberDatePickerState()
     var isDatePickerOpen = rememberSaveable { mutableStateOf(false) }
-    var byteArrayJustification : ByteArray? by rememberSaveable {
+    var byteArrayJustification: ByteArray? by rememberSaveable {
         mutableStateOf(
             byteArrayOf()
         )
@@ -714,18 +818,32 @@ fun AddExpenseUserList(
 }
 
 @Composable
-fun ViewExpenses(groupState: GetGroupByIdQuery.GroupById, onCardClicked : () -> Unit) {
+fun ViewExpenses(groupState: GetGroupByIdQuery.GroupById, onCardClicked: () -> Unit) {
 
-    LazyColumn (modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center) {
-        items(groupState.expenses) {item ->
-            Card (modifier = Modifier
-                .padding(8.dp)
-                .height(80.dp), onClick = onCardClicked) {
-                Box(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-                    Column (modifier = Modifier.align(Alignment.CenterStart)) {
-                        Text(text = item.description, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+    LazyColumn(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center) {
+        items(groupState.expenses) { item ->
+            Card(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .height(80.dp), onClick = onCardClicked
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                ) {
+                    Column(modifier = Modifier.align(Alignment.CenterStart)) {
+                        Text(
+                            text = item.description,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                         Spacer(modifier = Modifier.padding(4.dp))
-                        Text(text = "Paid by ${item.createdBy.userName}", color = Color.Gray, fontSize = 12.sp)
+                        Text(
+                            text = "Paid by ${item.createdBy.userName}",
+                            color = Color.Gray,
+                            fontSize = 12.sp
+                        )
                     }
                     Text(text = "${item.amount} €", modifier = Modifier.align(Alignment.CenterEnd))
                 }

@@ -98,7 +98,7 @@ fun FilePickingOrCamera(fileType: List<String>, outputByteArray: (ByteArray?) ->
         } else {
             Box(
                 modifier = Modifier
-                    .fillMaxHeight(0.5f)
+                    .fillMaxHeight(0.9f)
                     .fillMaxWidth(),
             ) {
 
@@ -109,11 +109,13 @@ fun FilePickingOrCamera(fileType: List<String>, outputByteArray: (ByteArray?) ->
                         onClick = {
                             isTakingPicture = false
                             isFileChosenOrPictureTaken = false
+                            imagebyteArray = byteArrayOf()
                         }, modifier = Modifier
                             .size(50.dp), contentPadding = PaddingValues(1.dp)
                     ) {
                         Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Go back")
                     }
+                    Spacer(modifier = Modifier.padding(8.dp))
                     Camera { snap ->
                         takenPicture = snap
                         imagebyteArray = takenPicture?.let { convertBitmapToByteArray(it) }

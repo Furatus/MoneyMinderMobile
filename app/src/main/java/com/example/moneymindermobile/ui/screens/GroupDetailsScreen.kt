@@ -18,12 +18,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -66,9 +69,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -430,6 +435,10 @@ fun GroupDetailsScreen(
                                         }
 
 
+                                    } else {
+                                        ViewExpenses(groupState = groupById) {
+                                            /*TODO*/
+                                        }
                                     }
                                     Button(
                                         onClick = { isAddExpenseSheetOpen = true },
@@ -641,7 +650,7 @@ fun BottomSheetAddExpense(
                     }
                 }
                 if (index == 1) {
-                    Column {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Spacer(modifier = Modifier.padding(8.dp))
                         FilePickingOrCamera(listOf("jpg", "png", "pdf")) { outputArray ->
                             byteArrayJustification = outputArray
@@ -650,6 +659,7 @@ fun BottomSheetAddExpense(
                             val bitmapImage =
                                 byteArrayJustification?.let { convertImageByteArrayToBitmap(it) }
                             if (bitmapImage != null) {
+                                Spacer(modifier = Modifier.padding(8.dp))
                                 Image(
                                     bitmap = bitmapImage.asImageBitmap(),
                                     contentDescription = "User file"
@@ -699,6 +709,27 @@ fun AddExpenseUserList(
                 }, modifier = Modifier.fillMaxWidth())
             }
             Spacer(modifier = Modifier.padding(8.dp))
+        }
+    }
+}
+
+@Composable
+fun ViewExpenses(groupState: GetGroupByIdQuery.GroupById, onCardClicked : () -> Unit) {
+
+    LazyColumn (modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center) {
+        items(groupState.expenses) {item ->
+            Card (modifier = Modifier
+                .padding(8.dp)
+                .height(80.dp), onClick = onCardClicked) {
+                Box(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                    Column (modifier = Modifier.align(Alignment.CenterStart)) {
+                        Text(text = item.description, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.padding(4.dp))
+                        Text(text = "Paid by ${item.createdBy.userName}", color = Color.Gray, fontSize = 12.sp)
+                    }
+                    Text(text = "${item.amount} €", modifier = Modifier.align(Alignment.CenterEnd))
+                }
+            }
         }
     }
 }

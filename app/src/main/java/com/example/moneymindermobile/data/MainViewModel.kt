@@ -32,9 +32,8 @@ import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
-import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
-import java.io.File
 import java.io.IOException
 
 class MainViewModel(
@@ -284,29 +283,46 @@ class MainViewModel(
         }
     }
 
-    fun uploadProfilePicture(imageFile: File) {
+    fun uploadProfilePicture(imageByteArray : ByteArray, username: String) {
+        val fileExtension = determineFileExtension(imageByteArray)
+
         viewModelScope.launch(Dispatchers.IO) {
             println("uploading profile picture")
             _isLoading.value = true
             try {
                 // Step 1: Execute the UploadProfilePicture mutation to get the unique upload link
-                val uploadLinkResponse =
-                    apolloClient.mutation(UploadProfilePictureMutation()).execute()
-                var uploadLink = uploadLinkResponse.data?.uploadProfilePicture
+                val uploadLinkResponse = apolloClient.mutation(UploadProfilePictureMutation()).execute()
+                var uploadLink : String? = uploadLinkResponse.data?.uploadProfilePicture ?: ""
+                uploadLink?.let { Log.d("link", it) }
                 uploadLink = uploadLink?.replace("localhost", ApiEndpoints.API_ADDRESS)
 
                 val requestBody =
                     MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart(
                         "file",
-                        imageFile.name,
-                        imageFile.asRequestBody("image/*".toMediaTypeOrNull())
+                        "UserImage_${username}.${fileExtension}",
+                        imageByteArray.toRequestBody(
+                            "image/${fileExtension}".toMediaTypeOrNull(),
+                            0,
+                            imageByteArray.size
+                        )
                     ).build()
 
                 val request = Request.Builder().url(uploadLink!!).post(requestBody).build()
 
-                val response = okHttpClient.newCall(request).execute()
+                okHttpClient.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        Log.e("Http-Error", "Erreur lors de la requête : ${e.message}")
+                    }
 
-                if (!response.isSuccessful) throw IOException("Unexpected code $response")
+                    override fun onResponse(call: Call, response: Response) {
+                        val responseCode = response.code
+
+                        when (responseCode) {
+                            200 -> {Log.d("http-response","Successfully uploaded picture : ${response.body?.string()}")}
+                            500 -> {Log.d("http-response", "internal Error : ${response.body?.string()}")}
+                        }
+                    }
+                })
             } catch (e: ApolloException) {
                 println("ApolloException: $e")
             } catch (e: IOException) {
@@ -361,7 +377,11 @@ class MainViewModel(
                     MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart(
                         "file",
                         "groupImage_${groupId}.${fileExtension}",
-                              RequestBody.create("image/${fileExtension}".toMediaTypeOrNull(), imageByteArray)
+                        imageByteArray.toRequestBody(
+                            "image/${fileExtension}".toMediaTypeOrNull(),
+                            0,
+                            imageByteArray.size
+                        )
                     ).build()
 
                 val request = Request.Builder().url(uploadLink!!).post(requestBody).build()

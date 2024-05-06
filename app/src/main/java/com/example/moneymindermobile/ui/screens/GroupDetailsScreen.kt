@@ -188,16 +188,7 @@ fun GroupDetailsScreen(
                                             modifier = Modifier.size(64.dp)
                                         )
                                     } else {
-                                        if (!groupById.groupImageUrl.isNullOrEmpty()) {
-                                            AsyncImage(
-                                                model = groupById.groupImageUrl.replace(
-                                                    "localhost", ApiEndpoints.API_ADDRESS
-                                                ),
-                                                contentDescription = "${groupById.name} avatar",
-                                                contentScale = ContentScale.Crop,
-                                                modifier = Modifier.size(64.dp)
-                                            )
-                                        } else {
+                                        if (groupById.groupImageUrl.isNullOrEmpty()) {
                                             val bitmapImage =
                                                 imageByteArray?.let {
                                                     convertImageByteArrayToBitmap(
@@ -218,6 +209,16 @@ fun GroupDetailsScreen(
                                                     contentScale = ContentScale.Crop
                                                 )
                                             }
+
+                                        } else {
+                                            AsyncImage(
+                                                model = groupById.groupImageUrl.replace(
+                                                    "localhost", ApiEndpoints.API_ADDRESS
+                                                ),
+                                                contentDescription = "${groupById.name} avatar",
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.size(64.dp)
+                                            )
                                         }
                                     }
                                 }
@@ -264,6 +265,7 @@ fun GroupDetailsScreen(
                                                     groupId = group,
                                                     imageByteArray!!
                                                 )
+                                                refreshTrigger.intValue++
                                             }
                                         }
                                 }) {
@@ -483,6 +485,7 @@ fun GroupDetailsScreen(
                                 modifier = Modifier.size(64.dp)
                             )
                         }
+                        Spacer(modifier = Modifier.padding(8.dp))
                         Text(text = groupById.name)
                     }
                     if (isGroupByIdCreatedByCurrentUser) Text(text = "You are the owner of this group")

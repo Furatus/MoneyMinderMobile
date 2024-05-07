@@ -197,8 +197,6 @@ fun GroupDetailsScreen(
                                                 }
 
                                             if (bitmapImage != null) {
-
-                                                Spacer(modifier = Modifier.padding(8.dp))
                                                 Image(
                                                     bitmap = bitmapImage.asImageBitmap(),
                                                     contentDescription = "User file",
@@ -806,8 +804,9 @@ fun AddExpenseUserList(
                 Card(modifier = Modifier.fillMaxWidth(0.7f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         EntityImage(imageLink = member.user.avatarUrl, title = member.user.userName)
+                        Spacer(modifier = Modifier.padding(8.dp))
                         member.user.userName?.let { Text(text = it) }
-                        Text(text = "${index}")
+                        //Text(text = "${index}")
                     }
                 }
                 Spacer(modifier = Modifier.padding(10.dp))

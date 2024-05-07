@@ -1,6 +1,8 @@
+@file:OptIn(ExperimentalFoundationApi::class)
+
 package com.example.moneymindermobile.ui.screens
 
-import androidx.compose.foundation.border
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,25 +14,35 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.outlined.Face
+import androidx.compose.material.icons.outlined.MailOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -46,6 +58,7 @@ import com.example.moneymindermobile.Routes
 import com.example.moneymindermobile.data.MainViewModel
 import com.example.moneymindermobile.ui.components.CurrentUserCard
 import com.example.moneymindermobile.ui.components.EntityImage
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
@@ -60,6 +73,7 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
     var createGroupName by remember { mutableStateOf("") }
     var createGroupDescription by remember { mutableStateOf("") }
     val newGroupResponse by viewModel.createGroupResponse.collectAsState()
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(firstFetchDone, refreshTrigger.value) {
         viewModel.getCurrentUser()
@@ -77,43 +91,110 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
                 CurrentUserCard(
                     currentUserQueryData = currentUserState, viewModel = viewModel
                 )
-                Column(
-                    modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.primary),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Your Groups",
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(8.dp)
+                val tabItems = listOf(
+                    TabItem(
+                        title = "My Groups",
+                        unselectedIcon = Icons.Outlined.Face,
+                        selectedIcon = Icons.Filled.Face
+                    ), TabItem(
+                        title = "Invitations",
+                        unselectedIcon = Icons.Outlined.MailOutline,
+                        selectedIcon = Icons.Filled.Email
                     )
-                    UserGroupList(currentUserQueryData = currentUserState) { clickedGroup ->
-                        navController.navigate("${Routes.GROUP_DETAILS}/${clickedGroup.group.id}")
-                    }
-                    Button(onClick = { showDialog = true }) {
-                        Text(text = "Create new group")
-                    }
+                )
+
+                var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
+                val pagerState = rememberPagerState(pageCount = { tabItems.size })
+
+                LaunchedEffect(pagerState.currentPage) {
+
+                    selectedTabIndex = pagerState.currentPage
                 }
-                Column(
-                    modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.primary),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Your invitations",
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(8.dp)
-                    )
-                    InvitationsList(
-                        currentUserQueryData = currentUserState,
-                        onAcceptClicked = { group ->
-                            viewModel.handleInvitation(groupId = group.id.toString(), accept = true)
-                            refreshTrigger.value++
+
+                TabRow(selectedTabIndex = selectedTabIndex) {
+                    tabItems.forEachIndexed { index, item ->
+                        Tab(selected = index == selectedTabIndex, onClick = {
+                            scope.launch {
+                                pagerState.animateScrollToPage(index)
+                            }
+                            selectedTabIndex = index
                         },
-                        onRefuseClicked = { group ->
-                            viewModel.handleInvitation(groupId = group.id.toString(), accept = false)
-                            refreshTrigger.value++
-                        }
-                    )
+                            text = {
+                                Text(text = item.title)
+                            },
+                            icon = {
+                                Icon(
+                                    imageVector = if (index == selectedTabIndex) item.selectedIcon else item.unselectedIcon,
+                                    contentDescription = "${item.title} Icon"
+                                )
+                            })
+                    }
                 }
+
+                HorizontalPager(
+                    state = pagerState, modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight()
+                        .weight(1f)
+                ) { index ->
+                    run {
+                        if (index == 0) {
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "Your Groups",
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(8.dp)
+                                )
+                                Box(modifier = Modifier.fillMaxSize()) {
+                                    UserGroupList(currentUserQueryData = currentUserState) { clickedGroup ->
+                                        navController.navigate("${Routes.GROUP_DETAILS}/${clickedGroup.group.id}")
+                                    }
+                                    Button(
+                                        onClick = { showDialog = true },
+                                        modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp)
+                                    ) {
+                                        Text(text = "Create new group")
+                                    }
+                                }
+                            }
+                        }
+
+                        if (index == 1) {
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "Your invitations",
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(8.dp)
+                                )
+                                InvitationsList(
+                                    currentUserQueryData = currentUserState,
+                                    onAcceptClicked = { group ->
+                                        viewModel.handleInvitation(
+                                            groupId = group.id.toString(),
+                                            accept = true
+                                        )
+                                        refreshTrigger.value++
+                                    },
+                                    onRefuseClicked = { group ->
+                                        viewModel.handleInvitation(
+                                            groupId = group.id.toString(),
+                                            accept = false
+                                        )
+                                        refreshTrigger.value++
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                }
+
             }
             if (showDialog) {
                 Dialog(onDismissRequest = {
@@ -209,7 +290,7 @@ fun InvitationsList(
     if (invitations != null) {
         LazyColumn(
             modifier = Modifier
-                .fillMaxHeight(0.3f)
+                .fillMaxSize()
         ) {
             items(invitations) { invitation ->
                 InvitationCard(
@@ -230,9 +311,11 @@ fun InvitationCard(
     onRefuseClicked: (CurrentUserQuery.Group1) -> Unit
 ) {
     val group = currentInvitation.group
-    Card(modifier = Modifier
-        .fillMaxWidth()
-        .padding(8.dp)) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+    ) {
         Column {
             Row(
                 verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(8.dp)
@@ -265,7 +348,7 @@ fun UserGroupList(
     if (userGroups != null) {
         LazyColumn(
             modifier = Modifier
-                .fillMaxHeight(0.3f)
+                .fillMaxHeight()
         ) {
             items(userGroups) { item: CurrentUserQuery.UserGroup ->
                 UserGroupCard(currentUserGroup = item, onGroupClicked)
@@ -299,3 +382,4 @@ fun UserGroupCard(
         }
     }
 }
+

@@ -438,7 +438,10 @@ class MainViewModel(
     }
 
     fun signOut() {
-        viewModelScope.launch { apolloClient.mutation(SignOutMutation()).execute() }
+        viewModelScope.launch {
+            apolloClient.mutation(SignOutMutation()).execute()
+            _signInResponse.value = null
+        }
     }
 
     fun determineFileExtension(bytes: ByteArray): String? {

@@ -138,7 +138,7 @@ fun GroupDetailsScreen(
     }
 
     LaunchedEffect(groupId, refreshTrigger.intValue) {
-        if (groupId != null) viewModel.getGroupById(groupId)
+        if (groupId != null)  viewModel.getGroupById(groupId)
     }
 
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -852,4 +852,9 @@ fun ViewExpenses(groupState: GetGroupByIdQuery.GroupById, onCardClicked: () -> U
             }
         }
     }
+}
+
+@Composable
+fun GroupBalance() {
+    
 }

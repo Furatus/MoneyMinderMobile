@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
@@ -41,15 +42,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.CurrentUserQuery
+import com.example.moneymindermobile.Routes
 import com.example.moneymindermobile.data.MainViewModel
 import com.example.moneymindermobile.data.api.ApiEndpoints
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CurrentUserCard(currentUserQueryData: CurrentUserQuery.Data?, viewModel: MainViewModel) {
+fun CurrentUserCard(currentUserQueryData: CurrentUserQuery.Data?, viewModel: MainViewModel, navController: NavHostController) {
     val context = LocalContext.current
     val isCurrentUserSheetOpened = rememberSaveable { mutableStateOf(false) }
     /*val launcher =
@@ -86,7 +89,8 @@ fun CurrentUserCard(currentUserQueryData: CurrentUserQuery.Data?, viewModel: Mai
                     if (isCurrentUserSheetOpened.value) {
                         ModalBottomSheetCurrentUser(
                             currentUser = currentUser,
-                            mainViewModel = viewModel
+                            mainViewModel = viewModel,
+                            navController = navController
                         ) { onDismiss ->
                             isCurrentUserSheetOpened.value = onDismiss
                         }
@@ -112,6 +116,7 @@ fun CurrentUserCard(currentUserQueryData: CurrentUserQuery.Data?, viewModel: Mai
 fun ModalBottomSheetCurrentUser(
     currentUser: CurrentUserQuery.CurrentUser?,
     mainViewModel: MainViewModel,
+    navController: NavHostController,
     onSheetDismiss: (Boolean) -> Unit
 ) {
     val sheetStateCurrentUser = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -231,13 +236,27 @@ fun ModalBottomSheetCurrentUser(
                             .fillMaxWidth()
                             .padding(8.dp)
                     )
+                    Button(onClick = {
+                        scope.launch { sheetStateCurrentUser.hide() }.invokeOnCompletion {
+                            onSheetDismiss(false)
+                            mainViewModel.signOut()
+                            navController.navigate(Routes.LOGIN)
+                        }
+                    }, modifier = Modifier.padding(8.dp)) {
+                        Icon(imageVector = Icons.Filled.Clear, contentDescription = "logout icon")
+                        Spacer(modifier = Modifier.padding(8.dp))
+                        Text(text = "Logout")
+                    }
 
                     Button(onClick = {
                         scope.launch { sheetStateCurrentUser.hide() }
                             .invokeOnCompletion {
                                 onSheetDismiss(false)
                                 if (imageByteArray?.size != 0 && imageByteArray != null && changedUserPicture) {
-                                    mainViewModel.uploadProfilePicture(imageByteArray = imageByteArray!!, username = currentUser.userName!!)
+                                    mainViewModel.uploadProfilePicture(
+                                        imageByteArray = imageByteArray!!,
+                                        username = currentUser.userName!!
+                                    )
                                 }
                             }
 

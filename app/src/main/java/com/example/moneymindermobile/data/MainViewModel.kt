@@ -16,6 +16,7 @@ import com.example.GetUsersByUsernameQuery
 import com.example.InviteUserMutation
 import com.example.RefuseInvitationMutation
 import com.example.SignInMutation
+import com.example.SignOutMutation
 import com.example.UploadGroupImagePictureMutation
 import com.example.UploadProfilePictureMutation
 import com.example.moneymindermobile.data.api.ApiEndpoints
@@ -31,7 +32,6 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.IOException
@@ -97,9 +97,9 @@ class MainViewModel(
     val addUserExpenseResponse: StateFlow<AddUserExpenseMutation.Data?> = _addUserExpenseResponse
 
     //Upload image group
-    private val  _uploadGroupPictureResponse : MutableStateFlow<UploadGroupImagePictureMutation.Data?> = MutableStateFlow(null)
+    private val _uploadGroupPictureResponse: MutableStateFlow<UploadGroupImagePictureMutation.Data?> =
+        MutableStateFlow(null)
     val uploadGroupImagePictureMutation = _uploadGroupPictureResponse
-
 
 
     fun refreshGraphQlError() {
@@ -283,7 +283,7 @@ class MainViewModel(
         }
     }
 
-    fun uploadProfilePicture(imageByteArray : ByteArray, username: String) {
+    fun uploadProfilePicture(imageByteArray: ByteArray, username: String) {
         val fileExtension = determineFileExtension(imageByteArray)
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -291,8 +291,9 @@ class MainViewModel(
             _isLoading.value = true
             try {
                 // Step 1: Execute the UploadProfilePicture mutation to get the unique upload link
-                val uploadLinkResponse = apolloClient.mutation(UploadProfilePictureMutation()).execute()
-                var uploadLink : String? = uploadLinkResponse.data?.uploadProfilePicture ?: ""
+                val uploadLinkResponse =
+                    apolloClient.mutation(UploadProfilePictureMutation()).execute()
+                var uploadLink: String? = uploadLinkResponse.data?.uploadProfilePicture ?: ""
                 uploadLink?.let { Log.d("link", it) }
                 uploadLink = uploadLink?.replace("localhost", ApiEndpoints.API_ADDRESS)
 
@@ -318,8 +319,19 @@ class MainViewModel(
                         val responseCode = response.code
 
                         when (responseCode) {
-                            200 -> {Log.d("http-response","Successfully uploaded picture : ${response.body?.string()}")}
-                            500 -> {Log.d("http-response", "internal Error : ${response.body?.string()}")}
+                            200 -> {
+                                Log.d(
+                                    "http-response",
+                                    "Successfully uploaded picture : ${response.body?.string()}"
+                                )
+                            }
+
+                            500 -> {
+                                Log.d(
+                                    "http-response",
+                                    "internal Error : ${response.body?.string()}"
+                                )
+                            }
                         }
                     }
                 })
@@ -358,6 +370,7 @@ class MainViewModel(
             }
         }
     }
+
     fun uploadGroupImagePicture(groupId: String, imageByteArray: ByteArray) {
 
         val fileExtension = determineFileExtension(imageByteArray)
@@ -369,7 +382,7 @@ class MainViewModel(
                 // Step 1: Execute the UploadProfilePicture mutation to get the unique upload link
                 val uploadLinkResponse =
                     apolloClient.mutation(UploadGroupImagePictureMutation(groupId)).execute()
-                var uploadLink : String? = uploadLinkResponse.data?.uploadGroupImagePicture ?: ""
+                var uploadLink: String? = uploadLinkResponse.data?.uploadGroupImagePicture ?: ""
                 uploadLink?.let { Log.d("link", it) }
                 uploadLink = uploadLink?.replace("localhost", ApiEndpoints.API_ADDRESS)
 
@@ -383,23 +396,35 @@ class MainViewModel(
                             imageByteArray.size
                         )
                     ).build()
+                if (uploadLink != null) {
+                    val request = Request.Builder().url(uploadLink).post(requestBody).build()
 
-                val request = Request.Builder().url(uploadLink!!).post(requestBody).build()
-
-                okHttpClient.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        Log.e("Http-Error", "Erreur lors de la requête : ${e.message}")
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        val responseCode = response.code
-
-                        when (responseCode) {
-                            200 -> {Log.d("http-response","Successfully uploaded picture : ${response.body?.string()}")}
-                            500 -> {Log.d("http-response", "internal Error : ${response.body?.string()}")}
+                    okHttpClient.newCall(request).enqueue(object : Callback {
+                        override fun onFailure(call: Call, e: IOException) {
+                            Log.e("Http-Error", "Erreur lors de la requête : ${e.message}")
                         }
-                    }
-                })
+
+                        override fun onResponse(call: Call, response: Response) {
+                            val responseCode = response.code
+
+                            when (responseCode) {
+                                200 -> {
+                                    Log.d(
+                                        "http-response",
+                                        "Successfully uploaded picture : ${response.body?.string()}"
+                                    )
+                                }
+
+                                500 -> {
+                                    Log.d(
+                                        "http-response",
+                                        "internal Error : ${response.body?.string()}"
+                                    )
+                                }
+                            }
+                        }
+                    })
+                }
             } catch (e: ApolloException) {
                 println("ApolloException: $e")
             } catch (e: IOException) {
@@ -410,6 +435,10 @@ class MainViewModel(
                 }
             }
         }
+    }
+
+    fun signOut() {
+        viewModelScope.launch { apolloClient.mutation(SignOutMutation()).execute() }
     }
 
     fun determineFileExtension(bytes: ByteArray): String? {

@@ -89,7 +89,7 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
         } else {
             Column {
                 CurrentUserCard(
-                    currentUserQueryData = currentUserState, viewModel = viewModel
+                    currentUserQueryData = currentUserState, viewModel = viewModel, navController = navController
                 )
                 val tabItems = listOf(
                     TabItem(

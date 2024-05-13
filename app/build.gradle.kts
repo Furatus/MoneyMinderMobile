@@ -104,6 +104,9 @@ dependencies {
     //file picker
     implementation(libs.mpfilepicker)
 
+    //pdf viewer
+    implementation(libs.bouquet)
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

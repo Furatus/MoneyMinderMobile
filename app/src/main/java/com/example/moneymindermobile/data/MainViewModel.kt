@@ -438,9 +438,9 @@ class MainViewModel(
     }
 
     fun signOut() {
+        _signInResponse.value = null
         viewModelScope.launch {
             apolloClient.mutation(SignOutMutation()).execute()
-            _signInResponse.value = null
         }
     }
 

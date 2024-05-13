@@ -6,8 +6,10 @@
 
 package com.example.moneymindermobile.ui.screens
 
+import android.util.Base64
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -90,6 +92,11 @@ import com.example.moneymindermobile.ui.components.EntityImage
 import com.example.moneymindermobile.ui.components.FilePickingOrCamera
 import com.example.moneymindermobile.ui.components.convertImageByteArrayToBitmap
 import com.example.type.KeyValuePairOfGuidAndNullableOfDecimalInput
+import com.rizzi.bouquet.ResourceType
+import com.rizzi.bouquet.VerticalPDFReader
+import com.rizzi.bouquet.VerticalPdfReaderState
+import com.rizzi.bouquet.rememberHorizontalPdfReaderState
+import com.rizzi.bouquet.rememberVerticalPdfReaderState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -138,7 +145,7 @@ fun GroupDetailsScreen(
     }
 
     LaunchedEffect(groupId, refreshTrigger.intValue) {
-        if (groupId != null)  viewModel.getGroupById(groupId)
+        if (groupId != null) viewModel.getGroupById(groupId)
     }
 
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -761,13 +768,30 @@ fun BottomSheetAddExpense(
                             byteArrayJustification = outputArray
                         }
                         if (byteArrayJustification?.isEmpty() == false) {
-                            val bitmapImage =
-                                byteArrayJustification?.let { convertImageByteArrayToBitmap(it) }
-                            if (bitmapImage != null) {
-                                Spacer(modifier = Modifier.padding(8.dp))
-                                Image(
-                                    bitmap = bitmapImage.asImageBitmap(),
-                                    contentDescription = "User file"
+                            if (determineFileExtension(byteArrayJustification!!) == "jpg" || determineFileExtension(
+                                    byteArrayJustification!!
+                                ) == "png"
+                            ) {
+                                val bitmapImage =
+                                    byteArrayJustification?.let { convertImageByteArrayToBitmap(it) }
+                                if (bitmapImage != null) {
+                                    Spacer(modifier = Modifier.padding(8.dp))
+                                    Image(
+                                        bitmap = bitmapImage.asImageBitmap(),
+                                        contentDescription = "User file"
+                                    )
+                                }
+                            }
+                            if (determineFileExtension(byteArrayJustification!!) == "pdf" ) {
+                                Text(text = "Pdf picked")
+                                val pdfState = rememberVerticalPdfReaderState(
+                                    resource = ResourceType.Base64(convertByteArrayToBase64(byteArrayJustification!!)),
+                                    isZoomEnable = true
+                                )
+                                VerticalPDFReader(
+                                    state = pdfState,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
                                 )
                             }
                         }
@@ -854,7 +878,20 @@ fun ViewExpenses(groupState: GetGroupByIdQuery.GroupById, onCardClicked: () -> U
     }
 }
 
+fun determineFileExtension(bytes: ByteArray): String? {
+    return when {
+        bytes.size >= 2 && bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte() -> "jpg"
+        bytes.size >= 3 && bytes[0] == 0x89.toByte() && bytes[1] == 0x50.toByte() && bytes[2] == 0x4E.toByte() -> "png"
+        bytes.size >= 4 && bytes[0] == 0x25.toByte() && bytes[1] == 0x50.toByte() && bytes[2] == 0x44.toByte() && bytes[3] == 0x46.toByte() -> "pdf"
+        else -> null
+    }
+}
+
+fun convertByteArrayToBase64(byteArray: ByteArray): String {
+    return Base64.encodeToString(byteArray, Base64.DEFAULT)
+}
+
 @Composable
 fun GroupBalance() {
-    
+
 }

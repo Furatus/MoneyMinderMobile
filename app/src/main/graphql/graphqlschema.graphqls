@@ -18,6 +18,17 @@ type KeyValuePairOfGuidAndDecimal {
     value: Decimal!
 }
 
+input PayDueToFilterInput {
+    and: [PayDueToFilterInput!]
+    or: [PayDueToFilterInput!]
+    userId: UuidOperationFilterInput
+    groupId: UuidOperationFilterInput
+    amountToPay: DecimalOperationFilterInput
+    payToUserId: UuidOperationFilterInput
+    payToUser: AppUserFilterInput
+    userGroup: UserGroupFilterInput
+}
+
 type GroupMessage {
     id: UUID!
     sender: AppUser!
@@ -30,6 +41,7 @@ type UserGroup {
     user: AppUser!
     group: Group!
     joinedAt: DateTime!
+    payTo: PayDueTo!
 }
 
 input InvitationInsertDtoInput {
@@ -71,6 +83,7 @@ input AppUserFilterInput {
     userExpenses: ListFilterInputTypeOfUserExpenseFilterInput
     createdExpenses: ListFilterInputTypeOfExpenseFilterInput
     invitations: ListFilterInputTypeOfInvitationFilterInput
+    paymentsToBeReceived: ListFilterInputTypeOfPayDueToFilterInput
     avatarUrl: StringOperationFilterInput
     id: UuidOperationFilterInput
     userName: StringOperationFilterInput
@@ -146,6 +159,7 @@ input AppUserInsertDtoInput {
 
 type Mutation {
     createUser(appUserInsertDto: AppUserInsertDtoInput!): AppUser
+    modifyMyself(appUserModifyDto: AppUserModifyDtoInput!): AppUser
     signIn(appUserLoginDto: AppUserLoginDtoInput!): SignInResult!
     signOut: Boolean!
     deleteSelf: Boolean!
@@ -158,11 +172,12 @@ type Mutation {
     createGroup(groupInsertInput: GroupInsertInput!): Group
     inviteUser(invitationInsertDto: InvitationInsertDtoInput!): Invitation
     uploadGroupImagePicture(groupId: UUID!): String!
+    modifyGroup(groupModifyDto: GroupModifyDtoInput!): Group
     sendMessage(messageInsertInput: MessageInsertInput!): Message
     sendGroupMessage(
         groupMessageInsertInput: GroupMessageInsertInput!
     ): GroupMessage
-    addUserExpense(expenseInsertInput: ExpenseInsertInput!): [UserExpense]!
+    addUserExpense(expenseInsertInput: ExpenseInsertInput!): [UserExpense!]!
     uploadExpenseJustification(expenseId: UUID!): String!
     expenseJustification(expenseId: UUID!): String!
 }
@@ -191,6 +206,19 @@ input ExpensePrevisualizationInput {
     amount: Decimal!
 }
 
+input AppUserModifyDtoInput {
+    userName: String
+    email: String
+    password: String
+}
+
+enum ExpenseType {
+    FOOD
+    RENT
+    TRANSPORT
+    OTHER
+}
+
 input GroupSortInput {
     id: SortEnumType
     name: SortEnumType
@@ -198,6 +226,20 @@ input GroupSortInput {
     image: SortEnumType
     owner: AppUserSortInput
     groupImageUrl: SortEnumType
+}
+
+input ListFilterInputTypeOfPayDueToFilterInput {
+    all: PayDueToFilterInput
+    none: PayDueToFilterInput
+    some: PayDueToFilterInput
+    any: Boolean
+}
+
+enum ValidJustificationExtensions {
+    PDF
+    JPG
+    PNG
+    JPEG
 }
 
 input ExpenseFilterInput {
@@ -210,6 +252,8 @@ input ExpenseFilterInput {
     createdAt: DateTimeOperationFilterInput
     createdBy: AppUserFilterInput
     userExpenses: ListFilterInputTypeOfUserExpenseFilterInput
+    justificationExtension: NullableOfValidJustificationExtensionsOperationFilterInput
+    expenseType: ExpenseTypeOperationFilterInput
 }
 
 input KeyValuePairOfGuidAndNullableOfDecimalInput {
@@ -296,6 +340,13 @@ input GroupMessageFilterInput {
     sentAt: DateTimeOperationFilterInput
 }
 
+input ExpenseTypeOperationFilterInput {
+    eq: ExpenseType
+    neq: ExpenseType
+    in: [ExpenseType!]
+    nin: [ExpenseType!]
+}
+
 input DecimalOperationFilterInput {
     eq: Decimal
     neq: Decimal
@@ -309,6 +360,13 @@ input DecimalOperationFilterInput {
     nlt: Decimal
     lte: Decimal
     nlte: Decimal
+}
+
+input GroupModifyDtoInput {
+    groupId: UUID!
+    name: String
+    description: String
+    ownerId: UUID
 }
 
 type Group {
@@ -327,6 +385,7 @@ type Group {
 
 type Query {
     users(where: AppUserFilterInput, order: [AppUserSortInput!]): [AppUser!]!
+    friends(where: AppUserFilterInput, order: [AppUserSortInput!]): [AppUser!]!
     currentUser(where: AppUserFilterInput, order: [AppUserSortInput!]): AppUser
     userById(
         id: UUID!
@@ -381,6 +440,7 @@ type AppUser {
     userExpenses: [UserExpense!]!
     createdExpenses: [Expense!]!
     invitations: [Invitation!]!
+    paymentsToBeReceived: [PayDueTo!]!
     avatarUrl: String
     userName: String
     email: String
@@ -394,12 +454,22 @@ type Expense {
     createdAt: DateTime!
     createdBy: AppUser!
     userExpenses: [UserExpense!]!
+    justificationExtension: ValidJustificationExtensions
+    expenseType: ExpenseType!
+}
+
+type PayDueTo {
+    userId: UUID!
+    groupId: UUID!
+    amountToPay: Decimal
+    payToUserId: UUID!
+    payToUser: AppUser!
+    userGroup: UserGroup!
 }
 
 input GroupInsertInput {
     name: String!
     description: String!
-    image: String
 }
 
 """
@@ -422,6 +492,13 @@ input DateTimeOperationFilterInput {
     nlte: DateTime
 }
 
+input NullableOfValidJustificationExtensionsOperationFilterInput {
+    eq: ValidJustificationExtensions
+    neq: ValidJustificationExtensions
+    in: [ValidJustificationExtensions]
+    nin: [ValidJustificationExtensions]
+}
+
 input ListFilterInputTypeOfGroupFilterInput {
     all: GroupFilterInput
     none: GroupFilterInput
@@ -441,6 +518,7 @@ input ExpenseInsertInput {
     groupId: UUID!
     amount: Decimal!
     description: String!
+    expenseType: ExpenseType!
 }
 
 input UserExpenseFilterInput {
@@ -458,6 +536,7 @@ input UserGroupFilterInput {
     user: AppUserFilterInput
     group: GroupFilterInput
     joinedAt: DateTimeOperationFilterInput
+    payTo: PayDueToFilterInput
 }
 
 type Invitation {

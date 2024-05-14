@@ -1,15 +1,16 @@
 @file:OptIn(
     ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
     ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class
+    ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3Api::class
 )
 
 package com.example.moneymindermobile.ui.screens
 
 import android.util.Base64
+import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,6 +50,7 @@ import androidx.compose.material.icons.outlined.ExitToApp
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -66,7 +68,9 @@ import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -83,19 +87,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.apollographql.apollo3.api.Optional
 import com.example.GetGroupByIdQuery
 import com.example.GetUsersByUsernameQuery
 import com.example.moneymindermobile.Routes
 import com.example.moneymindermobile.data.MainViewModel
 import com.example.moneymindermobile.data.api.ApiEndpoints
+import com.example.moneymindermobile.data.api.entities.ExpenseInsertInput
 import com.example.moneymindermobile.ui.components.EntityImage
 import com.example.moneymindermobile.ui.components.FilePickingOrCamera
 import com.example.moneymindermobile.ui.components.convertImageByteArrayToBitmap
 import com.example.type.KeyValuePairOfGuidAndNullableOfDecimalInput
 import com.rizzi.bouquet.ResourceType
 import com.rizzi.bouquet.VerticalPDFReader
-import com.rizzi.bouquet.VerticalPdfReaderState
-import com.rizzi.bouquet.rememberHorizontalPdfReaderState
 import com.rizzi.bouquet.rememberVerticalPdfReaderState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -651,7 +655,8 @@ fun BottomSheetAddExpense(
     onSheetDismissed: (Boolean) -> Unit
 ) {
     val sheetStateAddExpense = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var ExpenseTitleTextField = rememberSaveable { mutableStateOf("") }
+    var expenseTitleTextField = rememberSaveable { mutableStateOf("") }
+    var expenseAmountField = rememberSaveable { mutableStateOf("")}
     val datePickerState = rememberDatePickerState()
     var isDatePickerOpen = rememberSaveable { mutableStateOf(false) }
     var byteArrayJustification: ByteArray? by rememberSaveable {
@@ -721,14 +726,14 @@ fun BottomSheetAddExpense(
                             modifier = Modifier.padding(8.dp)
                         )
                         TextField(
-                            value = ExpenseTitleTextField.value,
+                            value = expenseTitleTextField.value,
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Filled.Info,
                                     contentDescription = "Description"
                                 )
                             },
-                            onValueChange = { ExpenseTitleTextField.value = it },
+                            onValueChange = { expenseTitleTextField.value = it },
                             label = { Text("Description") },
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                             modifier = Modifier
@@ -737,14 +742,14 @@ fun BottomSheetAddExpense(
                         )
 
                         TextField(
-                            value = ExpenseTitleTextField.value,
+                            value = expenseAmountField.value,
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Filled.Info,
                                     contentDescription = "Total Amount"
                                 )
                             },
-                            onValueChange = { ExpenseTitleTextField.value = it },
+                            onValueChange = { expenseAmountField.value = it },
                             label = { Text("Total Amount") },
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                             modifier = Modifier
@@ -755,9 +760,19 @@ fun BottomSheetAddExpense(
                         Text(text = "Sharing", modifier = Modifier.padding(8.dp))
                         var expenseList: List<KeyValuePairOfGuidAndNullableOfDecimalInput> =
                             emptyList()
+                        var userlist: List<Boolean> = emptyList()
 
-                        AddExpenseUserList(groupState = groupState, expenseList) { list ->
-                            expenseList = list
+                        AddExpenseUserList(
+                            groupState = groupState,
+                            expenseDetailsList = { list -> expenseList = list },
+                            userlist = { list -> userlist = list })
+                        Button(onClick = { val expenseList = matchListUserAndExpenses(userlist,expenseList)
+                            scope.launch {
+                                viewModel.addUserExpense(ExpenseInsertInput(amount = expenseAmountField.value.toFloat(), description = expenseTitleTextField.value, groupId = java.util.UUID.fromString(groupState.id.toString()), userAmountList = expenseList))
+                                sheetStateAddExpense.hide()
+                            }
+                        }) {
+                            Text(text = "Submit")
                         }
                     }
                 }
@@ -782,10 +797,14 @@ fun BottomSheetAddExpense(
                                     )
                                 }
                             }
-                            if (determineFileExtension(byteArrayJustification!!) == "pdf" ) {
+                            if (determineFileExtension(byteArrayJustification!!) == "pdf") {
                                 Text(text = "Pdf picked")
                                 val pdfState = rememberVerticalPdfReaderState(
-                                    resource = ResourceType.Base64(convertByteArrayToBase64(byteArrayJustification!!)),
+                                    resource = ResourceType.Base64(
+                                        convertByteArrayToBase64(
+                                            byteArrayJustification!!
+                                        )
+                                    ),
                                     isZoomEnable = true
                                 )
                                 VerticalPDFReader(
@@ -810,8 +829,8 @@ data class TabItem(
 @Composable
 fun AddExpenseUserList(
     groupState: GetGroupByIdQuery.GroupById,
-    expenseList: List<KeyValuePairOfGuidAndNullableOfDecimalInput>,
-    expenseDetailsList: (List<KeyValuePairOfGuidAndNullableOfDecimalInput>) -> Unit
+    expenseDetailsList: (List<KeyValuePairOfGuidAndNullableOfDecimalInput>) -> Unit,
+    userlist: (List<Boolean>) -> Unit
 ) {
     val members = groupState.userGroups
     LazyColumn(
@@ -819,24 +838,73 @@ fun AddExpenseUserList(
             .fillMaxWidth()
             .padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        val updatedExpenseList =
+            mutableStateListOf<KeyValuePairOfGuidAndNullableOfDecimalInput>().apply {
+                repeat(members.size) { index ->
+                    add(
+                        KeyValuePairOfGuidAndNullableOfDecimalInput(
+                            key = members[index].user.id,
+                            value = Optional.present(null)
+                        )
+                    )
+                }
+            }
+        val checkedUserList = mutableStateListOf<Boolean>().apply {
+            repeat(members.size) { _ ->
+                add(
+                    true
+                )
+            }
+        }
+
         itemsIndexed(members) { index, member ->
             var amountUserInput by rememberSaveable { mutableStateOf("") }
+            var checked by remember { mutableStateOf(true) }
             //val currentValue = expenseList.getOrNull(index)?.value?.toString() ?: ""
             //var amountUserInput by rememberSaveable { mutableStateOf(currentValue) }
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                 Card(modifier = Modifier.fillMaxWidth(0.7f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        EntityImage(imageLink = member.user.avatarUrl, title = member.user.userName)
-                        Spacer(modifier = Modifier.padding(8.dp))
-                        member.user.userName?.let { Text(text = it) }
-                        //Text(text = "${index}")
+                    Box(Modifier.fillMaxSize()) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            EntityImage(
+                                imageLink = member.user.avatarUrl,
+                                title = member.user.userName
+                            )
+                            Spacer(modifier = Modifier.padding(8.dp))
+                            member.user.userName?.let { Text(text = it) }
+                            //Text(text = "${index}")
+                        }
+                        Checkbox(
+                            checked = checked,
+                            onCheckedChange = {
+                                checked = it
+                                checkedUserList.set(index, it)
+                                //Log.d("userchecked", "${it}")
+                            },
+                            modifier = Modifier.align(Alignment.CenterEnd)
+                        )
+                        LaunchedEffect(key1 = checkedUserList) {
+                            userlist(checkedUserList)
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.padding(10.dp))
                 TextField(value = amountUserInput, onValueChange = {
                     amountUserInput = it
+                    //Log.d("exp", "${it.toIntOrNull()}")
+                    updatedExpenseList.set(
+                        index = index,
+                        element = KeyValuePairOfGuidAndNullableOfDecimalInput(
+                            member.user.id,
+                            Optional.present(it.toIntOrNull())
+                        )
+                    )
                 }, modifier = Modifier.fillMaxWidth())
+
+                LaunchedEffect(updatedExpenseList) {
+                    expenseDetailsList(updatedExpenseList)
+                }
             }
             Spacer(modifier = Modifier.padding(8.dp))
         }
@@ -889,6 +957,23 @@ fun determineFileExtension(bytes: ByteArray): String? {
 
 fun convertByteArrayToBase64(byteArray: ByteArray): String {
     return Base64.encodeToString(byteArray, Base64.DEFAULT)
+}
+
+fun matchListUserAndExpenses(
+    userList: List<Boolean>,
+    expenseList: List<KeyValuePairOfGuidAndNullableOfDecimalInput>
+): List<KeyValuePairOfGuidAndNullableOfDecimalInput> {
+    val matchedList = mutableListOf<KeyValuePairOfGuidAndNullableOfDecimalInput>()
+
+    for (i in userList.indices) {
+        if (userList[i]) {
+            val expense = expenseList.getOrNull(i)
+            matchedList.add(expense ?: KeyValuePairOfGuidAndNullableOfDecimalInput(key = Any(), value = Optional.Absent))
+            Log.d("Expense_User", "id ${expenseList[i].key} ,value ${expenseList[i].value}")
+        }
+    }
+
+    return matchedList
 }
 
 @Composable

@@ -4,6 +4,7 @@ mutation AddUserExpense($amount:Decimal!, $description:String!, $groupid:UUID!, 
         description:$description
         groupId: $groupid
         userAmountsList: $userAmountsList
+        expenseType: OTHER
     }){
         amount
 

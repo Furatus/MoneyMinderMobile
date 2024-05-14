@@ -25,6 +25,7 @@ okhttpUrlconnection = "4.9.3"
 roomRuntime = "2.6.1"
 lifecycleRuntimeCompose = "2.7.0"
 navigationCompose = "2.7.7"
+constraintlayoutCompose = "1.0.1"
 
 [libraries]
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
@@ -63,6 +64,7 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 material-icons-extended-android = { module = "libs.androidx.compose.material:material-icons-extended-android", version.ref = "materialIconsExtendedAndroid" }
 mpfilepicker = { module = "com.darkrockstudios:mpfilepicker", version.ref = "mpfilepicker" }
 okhttp-urlconnection = { module = "com.squareup.okhttp3:okhttp-urlconnection", version.ref = "okhttpUrlconnection" }
+androidx-constraintlayout-compose = { group = "androidx.constraintlayout", name = "constraintlayout-compose", version.ref = "constraintlayoutCompose" }
 
 
 [plugins]

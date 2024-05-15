@@ -893,13 +893,16 @@ fun AddExpenseUserList(
                             checked = checked,
                             onCheckedChange = {
                                 checked = it
-                                checkedUserList.set(index, it)
-                                //Log.d("userchecked", "${it}")
+                                checkedUserList[index] = it
+                                Log.d("userchecked", "${it}")
                             },
                             modifier = Modifier.align(Alignment.CenterEnd)
                         )
                         LaunchedEffect(key1 = checkedUserList) {
                             userlist(checkedUserList)
+                            checkedUserList.forEach{item ->
+                                Log.d("user_boolean_list_launched", "$item")
+                            }
                         }
                     }
                 }
@@ -982,6 +985,7 @@ fun matchListUserAndExpenses(
     val matchedList = mutableListOf<KeyValuePairOfGuidAndNullableOfDecimalInput>()
 
     for (i in userList.indices) {
+        Log.d("Expense_User", "id ${expenseList[i].key} ,value ${expenseList[i].value} , boolean ${userList[i]}")
         if (userList[i]) {
             val expense = expenseList.getOrNull(i)
             matchedList.add(
@@ -990,7 +994,6 @@ fun matchListUserAndExpenses(
                     value = Optional.Absent
                 )
             )
-            Log.d("Expense_User", "id ${expenseList[i].key} ,value ${expenseList[i].value}")
         }
     }
 

@@ -32,6 +32,15 @@ query GetGroupById($groupId:UUID!){
                 userName
                 avatarUrl
             }
+            expenseType
+            justificationExtension
+            userExpenses {
+                amount
+                user {
+                    userName
+                    avatarUrl
+                }
+            }
         }
     }
 }

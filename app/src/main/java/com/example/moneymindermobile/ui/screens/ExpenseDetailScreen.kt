@@ -1,14 +1,19 @@
 package com.example.moneymindermobile.ui.screens
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
@@ -20,6 +25,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -35,10 +41,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.moneymindermobile.Routes
 import com.example.moneymindermobile.data.MainViewModel
+import com.example.moneymindermobile.ui.components.EntityImage
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.TimeZone
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -114,11 +125,56 @@ fun ExpenseDetailScreen(expenseId: String?, viewModel: MainViewModel, navControl
             ) { index ->
                 run {
                     if (index == 0) {
-                        Text(text = "i'm a custom text")
+                        Column (modifier = Modifier.fillMaxSize()) {
+                            Card( modifier = Modifier
+                                .padding(8.dp)
+                                .fillMaxWidth()) {
+                                Column (modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(text = "${expense[0].amount} €", fontSize = 30.sp)
+                                    Spacer(modifier = Modifier.padding(8.dp))
+                                    EntityImage(imageLink = expense[0].createdBy.avatarUrl, title = "expense author")
+                                    Text(text = "Paid by ${expense[0].createdBy.userName}", modifier = Modifier.padding(4.dp))
+                                    Text(text = "on ${parseUtcDate(expense[0].createdAt as String).toString()}" )
+                                    Spacer(modifier = Modifier.padding(8.dp))
+                                    Text(text = "Category : ${expense[0].expenseType}")
+                                    Spacer(modifier = Modifier.padding(4.dp))
+                                }
+                            }
+
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                itemsIndexed(expense[0].userExpenses) { _, member ->
+
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                                        Card(modifier = Modifier.fillMaxWidth()) {
+                                            Box(Modifier.fillMaxSize()) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    EntityImage(
+                                                        imageLink = member.user.avatarUrl,
+                                                        title = member.user.userName
+                                                    )
+                                                    Spacer(modifier = Modifier.padding(8.dp))
+                                                    member.user.userName?.let { Text(text = it) }
+
+                                                }
+                                                Text(modifier = Modifier.align(Alignment.CenterEnd).padding(8.dp), text = "${member.amount} €")
+                                            }
+                                        }
+
+
+                                    }
+                                    Spacer(modifier = Modifier.padding(8.dp))
+                                }
+                            }
+                        }
                     }
                     if (index == 1) {
-                        Text(text = "I'm another custom text")
+                        if (expense[0].justificationExtension != null) {
 
+                        }
                     }
                 }
 
@@ -126,4 +182,11 @@ fun ExpenseDetailScreen(expenseId: String?, viewModel: MainViewModel, navControl
 
         }
     }
+}
+
+@SuppressLint("SimpleDateFormat")
+fun parseUtcDate(utcString: String): Date? {
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+    dateFormat.timeZone = TimeZone.getTimeZone("UTC+2")
+    return dateFormat.parse(utcString)
 }

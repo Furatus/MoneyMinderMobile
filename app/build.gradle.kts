@@ -121,5 +121,6 @@ dependencies {
 apollo{
     service("moneyminder") {
         packageName.set("com.example")
+        mapScalar("Decimal","kotlin.Float", "com.apollographql.apollo3.api.FloatAdapter")
     }
 }

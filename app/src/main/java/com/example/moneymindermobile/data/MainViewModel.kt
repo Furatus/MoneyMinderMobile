@@ -20,7 +20,7 @@ import com.example.SignOutMutation
 import com.example.UploadGroupImagePictureMutation
 import com.example.UploadProfilePictureMutation
 import com.example.moneymindermobile.data.api.ApiEndpoints
-import com.example.moneymindermobile.data.api.entities.ExpenseInsertInput
+import com.example.type.KeyValuePairOfGuidAndNullableOfDecimalInput
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -347,16 +347,16 @@ class MainViewModel(
         }
     }
 
-    fun addUserExpense(createUserExpense: ExpenseInsertInput) {
+    fun addUserExpense(amount : Float, description: String, groupId: String, userAmountsList : List<KeyValuePairOfGuidAndNullableOfDecimalInput>) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
                 val response = apolloClient.mutation(
                     AddUserExpenseMutation(
-                        createUserExpense.amount,
-                        createUserExpense.description,
-                        createUserExpense.groupId,
-                        createUserExpense.userAmountList
+                        amount = amount,
+                        description = description,
+                        groupid = groupId,
+                        userAmountsList = userAmountsList
                     )
                 ).execute()
                 response.data.let {
@@ -384,6 +384,7 @@ class MainViewModel(
                     apolloClient.mutation(UploadGroupImagePictureMutation(groupId)).execute()
                 var uploadLink: String? = uploadLinkResponse.data?.uploadGroupImagePicture ?: ""
                 uploadLink?.let { Log.d("link", it) }
+                Log.d("resp", uploadLinkResponse.data.toString())
                 uploadLink = uploadLink?.replace("localhost", ApiEndpoints.API_ADDRESS)
 
                 val requestBody =
@@ -396,7 +397,8 @@ class MainViewModel(
                             imageByteArray.size
                         )
                     ).build()
-                if (uploadLink != null) {
+                val regex = Regex("^http://[a-zA-Z0-9.\\-]+(:\\d+)?/groupimages/[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$")
+                if (uploadLink != null && regex.matches(uploadLink)) {
                     val request = Request.Builder().url(uploadLink).post(requestBody).build()
 
                     okHttpClient.newCall(request).enqueue(object : Callback {

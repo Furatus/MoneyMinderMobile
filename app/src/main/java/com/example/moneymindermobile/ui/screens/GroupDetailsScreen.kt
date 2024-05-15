@@ -2,6 +2,7 @@
     ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
     ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
     ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
     ExperimentalMaterial3Api::class
 )
 
@@ -93,7 +94,6 @@ import com.example.GetUsersByUsernameQuery
 import com.example.moneymindermobile.Routes
 import com.example.moneymindermobile.data.MainViewModel
 import com.example.moneymindermobile.data.api.ApiEndpoints
-import com.example.moneymindermobile.data.api.entities.ExpenseInsertInput
 import com.example.moneymindermobile.ui.components.EntityImage
 import com.example.moneymindermobile.ui.components.FilePickingOrCamera
 import com.example.moneymindermobile.ui.components.convertImageByteArrayToBitmap
@@ -655,8 +655,8 @@ fun BottomSheetAddExpense(
     onSheetDismissed: (Boolean) -> Unit
 ) {
     val sheetStateAddExpense = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var expenseTitleTextField = rememberSaveable { mutableStateOf("") }
-    var expenseAmountField = rememberSaveable { mutableStateOf("")}
+    val expenseTitleTextField = rememberSaveable { mutableStateOf("") }
+    val expenseAmountField = rememberSaveable { mutableStateOf("") }
     val datePickerState = rememberDatePickerState()
     var isDatePickerOpen = rememberSaveable { mutableStateOf(false) }
     var byteArrayJustification: ByteArray? by rememberSaveable {
@@ -715,6 +715,7 @@ fun BottomSheetAddExpense(
         ) { index ->
             run {
                 if (index == 0) {
+                    var isSubmitEnabled by rememberSaveable { mutableStateOf(false) }
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.fillMaxWidth()
@@ -733,7 +734,11 @@ fun BottomSheetAddExpense(
                                     contentDescription = "Description"
                                 )
                             },
-                            onValueChange = { expenseTitleTextField.value = it },
+                            onValueChange = {
+                                expenseTitleTextField.value = it
+                                isSubmitEnabled =
+                                    if (expenseTitleTextField.value != "" && expenseAmountField.value.toFloatOrNull() != null) true else false
+                            },
                             label = { Text("Description") },
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                             modifier = Modifier
@@ -749,7 +754,11 @@ fun BottomSheetAddExpense(
                                     contentDescription = "Total Amount"
                                 )
                             },
-                            onValueChange = { expenseAmountField.value = it },
+                            onValueChange = {
+                                expenseAmountField.value = it
+                                isSubmitEnabled =
+                                    if (expenseTitleTextField.value != "" && expenseAmountField.value.toFloatOrNull() != null) true else false
+                            },
                             label = { Text("Total Amount") },
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                             modifier = Modifier
@@ -766,12 +775,19 @@ fun BottomSheetAddExpense(
                             groupState = groupState,
                             expenseDetailsList = { list -> expenseList = list },
                             userlist = { list -> userlist = list })
-                        Button(onClick = { val expenseList = matchListUserAndExpenses(userlist,expenseList)
+                        Button(onClick = {
+                            val expenseListFinal = matchListUserAndExpenses(userlist, expenseList)
                             scope.launch {
-                                viewModel.addUserExpense(ExpenseInsertInput(amount = expenseAmountField.value.toFloat(), description = expenseTitleTextField.value, groupId = java.util.UUID.fromString(groupState.id.toString()), userAmountList = expenseList))
                                 sheetStateAddExpense.hide()
+                                onSheetDismissed(false)
                             }
-                        }) {
+                            viewModel.addUserExpense(
+                                amount = expenseAmountField.value.toFloat(),
+                                description = expenseTitleTextField.value,
+                                groupId = groupState.id.toString(),
+                                userAmountsList = expenseListFinal
+                            )
+                        }, enabled = isSubmitEnabled) {
                             Text(text = "Submit")
                         }
                     }
@@ -897,7 +913,7 @@ fun AddExpenseUserList(
                         index = index,
                         element = KeyValuePairOfGuidAndNullableOfDecimalInput(
                             member.user.id,
-                            Optional.present(it.toIntOrNull())
+                            Optional.present(it.toFloatOrNull())
                         )
                     )
                 }, modifier = Modifier.fillMaxWidth())
@@ -968,7 +984,12 @@ fun matchListUserAndExpenses(
     for (i in userList.indices) {
         if (userList[i]) {
             val expense = expenseList.getOrNull(i)
-            matchedList.add(expense ?: KeyValuePairOfGuidAndNullableOfDecimalInput(key = Any(), value = Optional.Absent))
+            matchedList.add(
+                expense ?: KeyValuePairOfGuidAndNullableOfDecimalInput(
+                    key = Any(),
+                    value = Optional.Absent
+                )
+            )
             Log.d("Expense_User", "id ${expenseList[i].key} ,value ${expenseList[i].value}")
         }
     }

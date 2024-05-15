@@ -15,6 +15,7 @@ import com.apollographql.apollo3.ApolloClient
 import com.apollographql.apollo3.network.okHttpClient
 import com.example.moneymindermobile.data.MainViewModel
 import com.example.moneymindermobile.data.api.ApiEndpoints
+import com.example.moneymindermobile.ui.screens.ExpenseDetailScreen
 import com.example.moneymindermobile.ui.screens.GroupDetailsScreen
 import com.example.moneymindermobile.ui.screens.HomeScreen
 import com.example.moneymindermobile.ui.screens.LoginScreen
@@ -76,6 +77,11 @@ class MainActivity : ComponentActivity() {
                                 viewModel = viewModel,
                                 navController = navController
                             )
+                        }
+                        composable("${Routes.EXPENSE_DETAILS}/{expenseId}") { navBackStackEntry ->
+                            viewModel.refreshGraphQlError()
+                            val expense = navBackStackEntry.arguments?.getString("expenseId")
+                            ExpenseDetailScreen(expenseId = expense, viewModel = viewModel, navController = navController)
                         }
                         composable("${Routes.USER_DETAILS}/{userId}") { navBackStackEntry ->
                             viewModel.refreshGraphQlError()

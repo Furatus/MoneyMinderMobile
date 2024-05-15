@@ -552,9 +552,7 @@ fun GroupDetailsScreen(
 
 
                                     } else {
-                                        ViewExpenses(groupState = groupById) {
-                                            /*TODO*/
-                                        }
+                                        ViewExpenses(groupState = groupById, navController = navController)
                                     }
                                     Button(
                                         onClick = { isAddExpenseSheetOpen = true },
@@ -928,14 +926,16 @@ fun AddExpenseUserList(
 }
 
 @Composable
-fun ViewExpenses(groupState: GetGroupByIdQuery.GroupById, onCardClicked: () -> Unit) {
+fun ViewExpenses(groupState: GetGroupByIdQuery.GroupById, navController: NavHostController) {
 
     LazyColumn(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center) {
         items(groupState.expenses) { item ->
             Card(
                 modifier = Modifier
                     .padding(8.dp)
-                    .height(80.dp), onClick = onCardClicked
+                    .height(80.dp), onClick = {
+                        navController.navigate("${Routes.EXPENSE_DETAILS}/${item.id}")
+                }
             ) {
                 Box(
                     modifier = Modifier

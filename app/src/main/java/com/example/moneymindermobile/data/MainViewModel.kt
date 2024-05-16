@@ -21,6 +21,7 @@ import com.example.SignOutMutation
 import com.example.UploadExpenseJustificationMutation
 import com.example.UploadGroupImagePictureMutation
 import com.example.UploadProfilePictureMutation
+import com.example.UserInfoMutation
 import com.example.moneymindermobile.data.api.ApiEndpoints
 import com.example.type.KeyValuePairOfGuidAndNullableOfDecimalInput
 import kotlinx.coroutines.Dispatchers
@@ -106,6 +107,9 @@ class MainViewModel(
 
     private val _expenseJustificationArray = MutableStateFlow<ByteArray?>(null)
     var expenseJustificationArray: StateFlow<ByteArray?> = _expenseJustificationArray
+
+    private val _userInfoResponse: MutableStateFlow<ByteArray?> = MutableStateFlow(null)
+    val userInfoResponse = _userInfoResponse
 
 
     fun refreshGraphQlError() {
@@ -579,6 +583,43 @@ class MainViewModel(
                 apolloClient.mutation(SignOutMutation()).execute()
             } catch (e: ApolloException) {
                 println(e)
+            }
+        }
+    }
+
+    fun userInfo() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val response =
+                    apolloClient.mutation(UserInfoMutation()).execute()
+                var userInfoLink = response.data?.userInfo
+                userInfoLink?.let { Log.d("link", it) }
+                Log.d("resp", response.data.toString())
+                userInfoLink =
+                    userInfoLink?.replace("localhost", ApiEndpoints.API_ADDRESS)
+                if (userInfoLink != null) {
+                    val request = Request.Builder().url(userInfoLink).build()
+                    okHttpClient.newCall(request).enqueue(object : Callback {
+                        override fun onFailure(call: Call, e: IOException) {
+                            Log.e("Http-Error", "Erreur lors de la requête : ${e.message}")
+                        }
+
+                        override fun onResponse(call: Call, response: Response) {
+                            response.body?.let { responseBody ->
+                                val inputStream: InputStream = responseBody.byteStream()
+                                val byteArray = inputStream.use { it.readBytes() }
+                                _userInfoResponse.value = byteArray
+                                responseBody.close()
+                            }
+                        }
+                    })
+                }
+                _graphQlError.value = response.errors
+            } catch (e: ApolloException) {
+                println(e)
+            } finally {
+                _isLoading.value = false
             }
         }
     }

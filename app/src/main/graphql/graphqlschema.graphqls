@@ -21,10 +21,7 @@ type KeyValuePairOfGuidAndDecimal {
 input PayDueToFilterInput {
     and: [PayDueToFilterInput!]
     or: [PayDueToFilterInput!]
-    userId: UuidOperationFilterInput
-    groupId: UuidOperationFilterInput
     amountToPay: DecimalOperationFilterInput
-    payToUserId: UuidOperationFilterInput
     payToUser: AppUserFilterInput
     userGroup: UserGroupFilterInput
 }
@@ -74,7 +71,6 @@ input ListFilterInputTypeOfMessageFilterInput {
 input AppUserFilterInput {
     and: [AppUserFilterInput!]
     or: [AppUserFilterInput!]
-    balance: DecimalOperationFilterInput
     userGroups: ListFilterInputTypeOfUserGroupFilterInput
     ownedGroups: ListFilterInputTypeOfGroupFilterInput
     sentMessages: ListFilterInputTypeOfMessageFilterInput
@@ -103,7 +99,6 @@ input AppUserFilterInput {
 }
 
 input AppUserSortInput {
-    balance: SortEnumType
     avatarUrl: SortEnumType
     id: SortEnumType
     userName: SortEnumType
@@ -165,14 +160,16 @@ type Mutation {
     deleteSelf: Boolean!
     joinGroup(userGroupInsertInput: UserGroupInsertInput!): UserGroup
     refuseInvitation(groupId: UUID!): Boolean!
-    payDues: Boolean!
-    payDuesByExpenseId(expenseIds: [UUID!]!): Boolean!
     uploadProfilePicture: String!
-    addToBalance(amount: Decimal!): Boolean!
+    uploadUserRib: String!
+    userRib(ribUserId: UUID!): String!
+    userInfo: String!
     createGroup(groupInsertInput: GroupInsertInput!): Group
     inviteUser(invitationInsertDto: InvitationInsertDtoInput!): Invitation
     uploadGroupImagePicture(groupId: UUID!): String!
+    groupPdfSumUp(groupId: UUID!): String!
     modifyGroup(groupModifyDto: GroupModifyDtoInput!): Group
+    payDuesToGroup(groupId: UUID!): String!
     sendMessage(messageInsertInput: MessageInsertInput!): Message
     sendGroupMessage(
         groupMessageInsertInput: GroupMessageInsertInput!
@@ -180,6 +177,7 @@ type Mutation {
     addUserExpense(expenseInsertInput: ExpenseInsertInput!): [UserExpense!]!
     uploadExpenseJustification(expenseId: UUID!): String!
     expenseJustification(expenseId: UUID!): String!
+    testPaypal: String!
 }
 
 type Message {
@@ -223,7 +221,6 @@ input GroupSortInput {
     id: SortEnumType
     name: SortEnumType
     description: SortEnumType
-    image: SortEnumType
     owner: AppUserSortInput
     groupImageUrl: SortEnumType
 }
@@ -306,7 +303,6 @@ input GroupFilterInput {
     id: UuidOperationFilterInput
     name: StringOperationFilterInput
     description: StringOperationFilterInput
-    image: StringOperationFilterInput
     userGroups: ListFilterInputTypeOfUserGroupFilterInput
     owner: AppUserFilterInput
     receivedGroupMessages: ListFilterInputTypeOfGroupMessageFilterInput
@@ -374,7 +370,6 @@ type Group {
     imageExtension: ValidImageExtensions
     name: String!
     description: String!
-    image: String
     userGroups: [UserGroup!]!
     owner: AppUser!
     receivedGroupMessages: [GroupMessage!]!
@@ -399,6 +394,7 @@ type Query {
     ): AppUser
     groups(where: GroupFilterInput, order: [GroupSortInput!]): [Group!]!
     groupById(id: UUID!, where: GroupFilterInput, order: [GroupSortInput!]): Group
+    groupBalances(groupId: UUID!): [KeyValuePairOfGuidAndDecimal!]!
     messagesByOtherUserId(
         otherUserId: UUID!
         where: MessageFilterInput
@@ -431,7 +427,7 @@ input IntOperationFilterInput {
 type AppUser {
     id: UUID!
     avatarExtension: ValidImageExtensions
-    balance: Decimal!
+    ribExtension: ValidJustificationExtensions
     userGroups: [UserGroup!]!
     ownedGroups: [Group!]!
     sentMessages: [Message!]!
@@ -459,11 +455,8 @@ type Expense {
 }
 
 type PayDueTo {
-    userId: UUID!
-    groupId: UUID!
-    amountToPay: Decimal
-    payToUserId: UUID!
-    payToUser: AppUser!
+    amountToPay: Decimal!
+    payToUser: AppUser
     userGroup: UserGroup!
 }
 

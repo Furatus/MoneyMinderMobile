@@ -3,6 +3,7 @@
 package com.example.moneymindermobile.ui.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +17,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
@@ -180,6 +182,15 @@ fun ModalBottomSheetCurrentUser(
                                     modifier = Modifier.size(64.dp)
                                 )
                             }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.padding(8.dp))
+                    
+                    Button(onClick = { navController.navigate(Routes.USER_STATS) }) {
+                        Row (horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                            Icon(imageVector = Icons.Filled.Build, contentDescription = "stats icon", modifier = Modifier.padding(8.dp))
+                            Text(text = "Stats")
                         }
                     }
 

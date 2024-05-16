@@ -20,6 +20,7 @@ import com.example.moneymindermobile.ui.screens.GroupDetailsScreen
 import com.example.moneymindermobile.ui.screens.HomeScreen
 import com.example.moneymindermobile.ui.screens.LoginScreen
 import com.example.moneymindermobile.ui.screens.RegistrationScreen
+import com.example.moneymindermobile.ui.screens.StatsScreen
 import com.example.moneymindermobile.ui.screens.UserDetailsScreen
 import com.example.moneymindermobile.ui.theme.MoneyMinderMobileTheme
 import okhttp3.JavaNetCookieJar
@@ -92,6 +93,10 @@ class MainActivity : ComponentActivity() {
                                 viewModel = viewModel,
                                 navController = navController
                             )
+                        }
+                        composable(Routes.USER_STATS){
+                            viewModel.refreshGraphQlError()
+                            StatsScreen(viewModel = viewModel, navController = navController)
                         }
                     }
                 }

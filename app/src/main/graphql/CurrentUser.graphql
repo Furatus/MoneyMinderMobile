@@ -3,7 +3,6 @@ query CurrentUser{
         id
         userName
         avatarUrl
-        balance
         userGroups {
             group {
                 id

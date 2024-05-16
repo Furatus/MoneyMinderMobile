@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
 
 package com.example.moneymindermobile.ui.components
 
@@ -55,21 +55,6 @@ import kotlinx.coroutines.launch
 fun CurrentUserCard(currentUserQueryData: CurrentUserQuery.Data?, viewModel: MainViewModel, navController: NavHostController) {
     val context = LocalContext.current
     val isCurrentUserSheetOpened = rememberSaveable { mutableStateOf(false) }
-    /*val launcher =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
-            uri?.let {
-                val parcelFileDescriptor = context.contentResolver.openFileDescriptor(uri, "r")
-                val file = File(context.cacheDir, "tempImage")
-                file.outputStream().use { outputStream ->
-                    parcelFileDescriptor?.fileDescriptor?.let { fileDescriptor ->
-                        FileInputStream(fileDescriptor).use { inputStream ->
-                            inputStream.copyTo(outputStream)
-                        }
-                    }
-                }
-                viewModel.uploadProfilePicture(file)
-            }
-        }*/
 
     Card(
         modifier = Modifier
@@ -174,7 +159,6 @@ fun ModalBottomSheetCurrentUser(
 
                                 if (bitmapImage != null) {
 
-                                    Spacer(modifier = Modifier.padding(8.dp))
                                     Image(
                                         bitmap = bitmapImage.asImageBitmap(),
                                         contentDescription = "User file",

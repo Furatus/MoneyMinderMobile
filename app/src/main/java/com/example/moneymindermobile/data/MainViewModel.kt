@@ -10,6 +10,7 @@ import com.example.AddUserExpenseMutation
 import com.example.CreateGroupMutation
 import com.example.CreateUserMutation
 import com.example.CurrentUserQuery
+import com.example.ExpenseJustificationMutation
 import com.example.GetGroupByIdQuery
 import com.example.GetUserDetailsByIdQuery
 import com.example.GetUsersByUsernameQuery
@@ -17,6 +18,7 @@ import com.example.InviteUserMutation
 import com.example.RefuseInvitationMutation
 import com.example.SignInMutation
 import com.example.SignOutMutation
+import com.example.UploadExpenseJustificationMutation
 import com.example.UploadGroupImagePictureMutation
 import com.example.UploadProfilePictureMutation
 import com.example.moneymindermobile.data.api.ApiEndpoints
@@ -35,6 +37,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.IOException
+import java.io.InputStream
 
 class MainViewModel(
     public val apolloClient: ApolloClient, private val okHttpClient: OkHttpClient
@@ -100,6 +103,9 @@ class MainViewModel(
     private val _uploadGroupPictureResponse: MutableStateFlow<UploadGroupImagePictureMutation.Data?> =
         MutableStateFlow(null)
     val uploadGroupImagePictureMutation = _uploadGroupPictureResponse
+
+    private val _expenseJustificationArray = MutableStateFlow<ByteArray?>(null)
+    var expenseJustificationArray: StateFlow<ByteArray?> = _expenseJustificationArray
 
 
     fun refreshGraphQlError() {
@@ -296,45 +302,49 @@ class MainViewModel(
                 var uploadLink: String? = uploadLinkResponse.data?.uploadProfilePicture ?: ""
                 uploadLink?.let { Log.d("link", it) }
                 uploadLink = uploadLink?.replace("localhost", ApiEndpoints.API_ADDRESS)
+                val regex =
+                    Regex("^http://[a-zA-Z0-9.\\-]+(:\\d+)?/avatars/[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$")
+                if (uploadLink != null && regex.matches(uploadLink)) {
 
-                val requestBody =
-                    MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart(
-                        "file",
-                        "UserImage_${username}.${fileExtension}",
-                        imageByteArray.toRequestBody(
-                            "image/${fileExtension}".toMediaTypeOrNull(),
-                            0,
-                            imageByteArray.size
-                        )
-                    ).build()
+                    val requestBody =
+                        MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart(
+                            "file",
+                            "UserImage_${username}.${fileExtension}",
+                            imageByteArray.toRequestBody(
+                                "image/${fileExtension}".toMediaTypeOrNull(),
+                                0,
+                                imageByteArray.size
+                            )
+                        ).build()
 
-                val request = Request.Builder().url(uploadLink!!).post(requestBody).build()
+                    val request = Request.Builder().url(uploadLink).post(requestBody).build()
 
-                okHttpClient.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        Log.e("Http-Error", "Erreur lors de la requête : ${e.message}")
-                    }
+                    okHttpClient.newCall(request).enqueue(object : Callback {
+                        override fun onFailure(call: Call, e: IOException) {
+                            Log.e("Http-Error", "Erreur lors de la requête : ${e.message}")
+                        }
 
-                    override fun onResponse(call: Call, response: Response) {
-                        val responseCode = response.code
+                        override fun onResponse(call: Call, response: Response) {
+                            val responseCode = response.code
 
-                        when (responseCode) {
-                            200 -> {
-                                Log.d(
-                                    "http-response",
-                                    "Successfully uploaded picture : ${response.body?.string()}"
-                                )
-                            }
+                            when (responseCode) {
+                                200 -> {
+                                    Log.d(
+                                        "http-response",
+                                        "Successfully uploaded picture : ${response.body?.string()}"
+                                    )
+                                }
 
-                            500 -> {
-                                Log.d(
-                                    "http-response",
-                                    "internal Error : ${response.body?.string()}"
-                                )
+                                500 -> {
+                                    Log.d(
+                                        "http-response",
+                                        "internal Error : ${response.body?.string()}"
+                                    )
+                                }
                             }
                         }
-                    }
-                })
+                    })
+                }
             } catch (e: ApolloException) {
                 println("ApolloException: $e")
             } catch (e: IOException) {
@@ -347,7 +357,12 @@ class MainViewModel(
         }
     }
 
-    fun addUserExpense(amount : Float, description: String, groupId: String, userAmountsList : List<KeyValuePairOfGuidAndNullableOfDecimalInput>) {
+    fun addUserExpense(
+        amount: Float,
+        description: String,
+        groupId: String,
+        userAmountsList: List<KeyValuePairOfGuidAndNullableOfDecimalInput>
+    ) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -397,7 +412,8 @@ class MainViewModel(
                             imageByteArray.size
                         )
                     ).build()
-                val regex = Regex("^http://[a-zA-Z0-9.\\-]+(:\\d+)?/groupimages/[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$")
+                val regex =
+                    Regex("^http://[a-zA-Z0-9.\\-]+(:\\d+)?/groupimages/[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$")
                 if (uploadLink != null && regex.matches(uploadLink)) {
                     val request = Request.Builder().url(uploadLink).post(requestBody).build()
 
@@ -439,10 +455,131 @@ class MainViewModel(
         }
     }
 
+    fun uploadExpenseJustification(expenseId: String, justificationByteArray: ByteArray) {
+        val fileExtension = determineFileExtension(justificationByteArray)
+
+        viewModelScope.launch(Dispatchers.IO) {
+            println("uploading profile picture")
+            _isLoading.value = true
+            try {
+                // Step 1: Execute the UploadProfilePicture mutation to get the unique upload link
+                val uploadLinkResponse =
+                    apolloClient.mutation(UploadExpenseJustificationMutation(expenseId)).execute()
+                var uploadLink: String? = uploadLinkResponse.data?.uploadExpenseJustification ?: ""
+                uploadLink?.let { Log.d("link", it) }
+                Log.d("resp", uploadLinkResponse.data.toString())
+                uploadLink = uploadLink?.replace("localhost", ApiEndpoints.API_ADDRESS)
+
+                val mediaType = when (fileExtension) {
+                    "jpg", "jpeg", "png" -> "image/${fileExtension}"
+                    "pdf" -> "application/pdf"
+                    else -> "application/octet-stream"
+                }
+
+                Log.d("file_ext", mediaType)
+                Log.d("exp_id", expenseId)
+
+                val requestBody = MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart(
+                        "file",
+                        "filename.${fileExtension}",
+                        justificationByteArray.toRequestBody(
+                            mediaType.toMediaTypeOrNull(),
+                            0,
+                            justificationByteArray.size
+                        )
+                    )
+                    .build()
+
+                val regex =
+                    Regex("^http://[a-zA-Z0-9.\\-]+(:\\d+)?/justifications/[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$")
+                if (uploadLink != null && regex.matches(uploadLink)) {
+                    val request = Request.Builder().url(uploadLink).post(requestBody).build()
+
+                    okHttpClient.newCall(request).enqueue(object : Callback {
+                        override fun onFailure(call: Call, e: IOException) {
+                            Log.e("Http-Error", "Erreur lors de la requête : ${e.message}")
+                        }
+
+                        override fun onResponse(call: Call, response: Response) {
+                            val responseCode = response.code
+
+                            when (responseCode) {
+                                200 -> {
+                                    Log.d(
+                                        "http-response",
+                                        "Successfully uploaded picture : ${response.body?.string()}"
+                                    )
+                                }
+
+                                500 -> {
+                                    Log.d(
+                                        "http-response",
+                                        "internal Error : ${response.body?.string()}"
+                                    )
+                                }
+                            }
+                        }
+                    })
+                }
+            } catch (e: ApolloException) {
+                println("ApolloException: $e")
+            } catch (e: IOException) {
+                println("IOException: $e")
+            } finally {
+                withContext(Dispatchers.Main) {
+                    _isLoading.value = false
+                }
+            }
+        }
+    }
+
+    fun expenseJustification(expenseId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val response =
+                    apolloClient.mutation(ExpenseJustificationMutation(expenseId)).execute()
+                var justificationLink = response.data?.expenseJustification
+                justificationLink?.let { Log.d("link", it) }
+                Log.d("resp", response.data.toString())
+                justificationLink =
+                    justificationLink?.replace("localhost", ApiEndpoints.API_ADDRESS)
+                if (justificationLink != null) {
+                    val request = Request.Builder().url(justificationLink).build()
+                    okHttpClient.newCall(request).enqueue(object : Callback {
+                        override fun onFailure(call: Call, e: IOException) {
+                            Log.e("Http-Error", "Erreur lors de la requête : ${e.message}")
+                        }
+
+                        override fun onResponse(call: Call, response: Response) {
+                            response.body?.let { responseBody ->
+                                val inputStream: InputStream = responseBody.byteStream()
+                                val byteArray = inputStream.use { it.readBytes() }
+                                _expenseJustificationArray.value = byteArray
+                                responseBody.close()
+                            }
+                        }
+                    })
+                }
+                _graphQlError.value = response.errors
+            } catch (e: ApolloException) {
+                println(e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
     fun signOut() {
         _signInResponse.value = null
         viewModelScope.launch {
-            apolloClient.mutation(SignOutMutation()).execute()
+            try {
+                apolloClient.mutation(SignOutMutation()).execute()
+            } catch (e: ApolloException) {
+                println(e)
+            }
         }
     }
 

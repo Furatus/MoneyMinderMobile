@@ -1,0 +1,3 @@
+mutation UploadExpenseJustification($expenseId: UUID!) {
+    uploadExpenseJustification(expenseId : $expenseId)
+}

@@ -2,6 +2,7 @@ package com.example.moneymindermobile.ui.screens
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,17 +36,24 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.moneymindermobile.Routes
 import com.example.moneymindermobile.data.MainViewModel
 import com.example.moneymindermobile.ui.components.EntityImage
+import com.example.moneymindermobile.ui.components.FilePickingOrCamera
+import com.example.moneymindermobile.ui.components.convertImageByteArrayToBitmap
+import com.rizzi.bouquet.ResourceType
+import com.rizzi.bouquet.VerticalPDFReader
+import com.rizzi.bouquet.rememberVerticalPdfReaderState
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -53,7 +61,11 @@ import java.util.TimeZone
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ExpenseDetailScreen(expenseId: String?, viewModel: MainViewModel, navController: NavHostController ) {
+fun ExpenseDetailScreen(
+    expenseId: String?,
+    viewModel: MainViewModel,
+    navController: NavHostController
+) {
     val scope = rememberCoroutineScope()
     val groupById = viewModel.groupByIdResponse.collectAsState().value?.groupById
     val expense = groupById?.expenses?.filter { it.id == expenseId }
@@ -61,19 +73,40 @@ fun ExpenseDetailScreen(expenseId: String?, viewModel: MainViewModel, navControl
     if (!expense.isNullOrEmpty()) {
         val expenseIndex = groupById.expenses.indexOf(expense[0])
 
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxSize()) {
-                Button(onClick = {navController.navigate("${Routes.GROUP_DETAILS}/${groupById.id}") }, contentPadding = PaddingValues(0.dp), modifier = Modifier.fillMaxWidth(0.3f)) {
-                    Icon(imageVector = Icons.Filled.Close, contentDescription = "Close icon")
-                }
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Button(
+                onClick = { navController.navigate("${Routes.GROUP_DETAILS}/${groupById.id}") },
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier.fillMaxWidth(0.3f)
+            ) {
+                Icon(imageVector = Icons.Filled.Close, contentDescription = "Close icon")
+            }
             Spacer(modifier = Modifier.padding(8.dp))
 
-            Box (modifier = Modifier.fillMaxWidth())  {
-                Button(onClick = { navController.navigate("${Routes.EXPENSE_DETAILS}/${groupById.expenses[expenseIndex - 1].id}") }, modifier = Modifier.align(Alignment.CenterStart), enabled = expenseIndex > 0) {
-                    Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "previous expense icon" )
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = { navController.navigate("${Routes.EXPENSE_DETAILS}/${groupById.expenses[expenseIndex - 1].id}") },
+                    modifier = Modifier.align(Alignment.CenterStart),
+                    enabled = expenseIndex > 0
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.ArrowBack,
+                        contentDescription = "previous expense icon"
+                    )
                 }
                 Text(text = expense[0].description, modifier = Modifier.align(Alignment.Center))
-                Button(onClick = { navController.navigate("${Routes.EXPENSE_DETAILS}/${groupById.expenses[expenseIndex + 1].id}") }, modifier = Modifier.align(Alignment.CenterEnd), enabled = expenseIndex + 1 < groupById.expenses.size) {
-                    Icon(imageVector = Icons.Filled.ArrowForward, contentDescription = "next expense icon" )
+                Button(
+                    onClick = { navController.navigate("${Routes.EXPENSE_DETAILS}/${groupById.expenses[expenseIndex + 1].id}") },
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                    enabled = expenseIndex + 1 < groupById.expenses.size
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.ArrowForward,
+                        contentDescription = "next expense icon"
+                    )
                 }
             }
 
@@ -125,16 +158,27 @@ fun ExpenseDetailScreen(expenseId: String?, viewModel: MainViewModel, navControl
             ) { index ->
                 run {
                     if (index == 0) {
-                        Column (modifier = Modifier.fillMaxSize()) {
-                            Card( modifier = Modifier
-                                .padding(8.dp)
-                                .fillMaxWidth()) {
-                                Column (modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            Card(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .fillMaxWidth()
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
                                     Text(text = "${expense[0].amount} €", fontSize = 30.sp)
                                     Spacer(modifier = Modifier.padding(8.dp))
-                                    EntityImage(imageLink = expense[0].createdBy.avatarUrl, title = "expense author")
-                                    Text(text = "Paid by ${expense[0].createdBy.userName}", modifier = Modifier.padding(4.dp))
-                                    Text(text = "on ${parseUtcDate(expense[0].createdAt as String).toString()}" )
+                                    EntityImage(
+                                        imageLink = expense[0].createdBy.avatarUrl,
+                                        title = "expense author"
+                                    )
+                                    Text(
+                                        text = "Paid by ${expense[0].createdBy.userName}",
+                                        modifier = Modifier.padding(4.dp)
+                                    )
+                                    Text(text = "on ${parseUtcDate(expense[0].createdAt as String).toString()}")
                                     Spacer(modifier = Modifier.padding(8.dp))
                                     Text(text = "Category : ${expense[0].expenseType}")
                                     Spacer(modifier = Modifier.padding(4.dp))
@@ -144,11 +188,15 @@ fun ExpenseDetailScreen(expenseId: String?, viewModel: MainViewModel, navControl
                             LazyColumn(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally
+                                    .padding(8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 itemsIndexed(expense[0].userExpenses) { _, member ->
 
-                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
                                         Card(modifier = Modifier.fillMaxWidth()) {
                                             Box(Modifier.fillMaxSize()) {
                                                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -160,7 +208,11 @@ fun ExpenseDetailScreen(expenseId: String?, viewModel: MainViewModel, navControl
                                                     member.user.userName?.let { Text(text = it) }
 
                                                 }
-                                                Text(modifier = Modifier.align(Alignment.CenterEnd).padding(8.dp), text = "${member.amount} €")
+                                                Text(
+                                                    modifier = Modifier
+                                                        .align(Alignment.CenterEnd)
+                                                        .padding(8.dp), text = "${member.amount} €"
+                                                )
                                             }
                                         }
 
@@ -173,13 +225,127 @@ fun ExpenseDetailScreen(expenseId: String?, viewModel: MainViewModel, navControl
                     }
                     if (index == 1) {
                         if (expense[0].justificationExtension != null) {
+                            if (expenseId != null) {
+                                val currentExpenseId = rememberSaveable { mutableStateOf("") }
+                                if (currentExpenseId.value != expenseId) {
+                                    currentExpenseId.value = expenseId
+                                    viewModel.expenseJustification(expenseId)
+                                }
+                                val expenseByteArray by viewModel.expenseJustificationArray.collectAsState()
+                                if (expenseByteArray != null) {
+                                    if (determineFileExtension(expenseByteArray!!) == "jpg" || determineFileExtension(
+                                            expenseByteArray!!
+                                        ) == "png"
+                                    ) {
+                                        val bitmapImage =
+                                            expenseByteArray?.let { convertImageByteArrayToBitmap(it) }
+                                        if (bitmapImage != null) {
+                                            Spacer(modifier = Modifier.padding(8.dp))
+                                            Image(
+                                                bitmap = bitmapImage.asImageBitmap(),
+                                                contentDescription = "User file"
+                                            )
+                                        }
+                                    }
+                                    if (determineFileExtension(expenseByteArray!!) == "pdf") {
+                                        val pdfState = rememberVerticalPdfReaderState(
+                                            resource = ResourceType.Base64(
+                                                convertByteArrayToBase64(
+                                                    expenseByteArray!!
+                                                )
+                                            ),
+                                            isZoomEnable = true
+                                        )
+                                        VerticalPDFReader(
+                                            state = pdfState,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                        )
+                                    }
+                                } else {
+
+                                    Text(text = "Failed to fetch Image")
+                                }
+                            } else {
+                                Text(text = "failed to fetch expense id")
+                            }
+                        } else {
+                            var byteArrayJustification: ByteArray? by rememberSaveable {
+                                mutableStateOf(
+                                    byteArrayOf()
+                                )
+                            }
+
+                            Column {
+                                if (byteArrayJustification == null || byteArrayJustification?.isEmpty() == true) {
+                                    Text(text = "No justification for this expense, but you can add one !")
+                                    Spacer(modifier = Modifier.padding(8.dp))
+                                }
+                                FilePickingOrCamera(
+                                    fileType = listOf(
+                                        "jpg",
+                                        "jpeg",
+                                        "png",
+                                        "pdf"
+                                    )
+                                ) { bytes ->
+                                    byteArrayJustification = bytes
+                                }
+
+                                if (byteArrayJustification?.isEmpty() == false) {
+                                    if (determineFileExtension(byteArrayJustification!!) == "jpg" || determineFileExtension(
+                                            byteArrayJustification!!
+                                        ) == "png"
+                                    ) {
+                                        val bitmapImage =
+                                            byteArrayJustification?.let {
+                                                convertImageByteArrayToBitmap(
+                                                    it
+                                                )
+                                            }
+                                        if (bitmapImage != null) {
+                                            Spacer(modifier = Modifier.padding(8.dp))
+                                            Image(
+                                                bitmap = bitmapImage.asImageBitmap(),
+                                                contentDescription = "User file",
+                                                modifier = Modifier.fillMaxHeight(0.6f)
+                                            )
+                                        }
+                                    }
+                                    if (determineFileExtension(byteArrayJustification!!) == "pdf") {
+                                        Text(text = "Pdf picked")
+                                        val pdfState = rememberVerticalPdfReaderState(
+                                            resource = ResourceType.Base64(
+                                                convertByteArrayToBase64(
+                                                    byteArrayJustification!!
+                                                )
+                                            ),
+                                            isZoomEnable = true
+                                        )
+                                        VerticalPDFReader(
+                                            state = pdfState,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                        )
+                                    }
+                                    Button(onClick = {
+                                        if (expenseId != null) {
+                                            viewModel.uploadExpenseJustification(
+                                                expenseId,
+                                                byteArrayJustification!!
+                                            )
+                                            navController.navigate("${Routes.EXPENSE_DETAILS}/${expense[0].id}")
+                                        }
+                                    }) {
+                                        Text(text = "Submit justification")
+                                    }
+                                }
+                            }
 
                         }
                     }
                 }
-
             }
-
         }
     }
 }

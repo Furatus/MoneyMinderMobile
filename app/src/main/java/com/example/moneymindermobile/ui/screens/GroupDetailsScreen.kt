@@ -785,6 +785,8 @@ fun BottomSheetAddExpense(
                                 groupId = groupState.id.toString(),
                                 userAmountsList = expenseListFinal
                             )
+
+                            //if (viewModel.addUserExpenseResponse?.value.
                         }, enabled = isSubmitEnabled) {
                             Text(text = "Submit")
                         }
@@ -793,7 +795,7 @@ fun BottomSheetAddExpense(
                 if (index == 1) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Spacer(modifier = Modifier.padding(8.dp))
-                        FilePickingOrCamera(listOf("jpg", "png", "pdf")) { outputArray ->
+                        FilePickingOrCamera(listOf("jpg", "jpeg", "png", "pdf")) { outputArray ->
                             byteArrayJustification = outputArray
                         }
                         if (byteArrayJustification?.isEmpty() == false) {

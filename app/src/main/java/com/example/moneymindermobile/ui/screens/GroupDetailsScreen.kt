@@ -85,6 +85,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -602,7 +603,9 @@ fun GroupDetailsScreen(
                                     val currentPayDueTo = currentUserGroup.first().payTo
 
                                     DisplayPayDueTo(
-                                        payDueTo = currentPayDueTo
+                                        payDueTo = currentPayDueTo,
+                                        viewModel = viewModel,
+                                        groupId = groupById.id.toString()
                                     )
 
                                     if (isGraphOpened) {
@@ -631,13 +634,17 @@ fun GroupDetailsScreen(
 }
 
 @Composable
-fun DisplayPayDueTo(payDueTo: GetGroupByIdQuery.PayTo) {
+fun DisplayPayDueTo(payDueTo: GetGroupByIdQuery.PayTo, viewModel: MainViewModel, groupId: String) {
+    val context = LocalContext.current
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (payDueTo.payToUser != null) {
             Text(text = "⚠\uFE0F You owe ${payDueTo.amountToPay} € to ${payDueTo.payToUser.userName}")
+            Button(onClick = { viewModel.OpenPaymentUrlIfNeeded(groupId = groupId, context = context) }) {
+                Text(text = "Pay now")
+            }
         }
         else
             Text(text = "✅ You don't owe anything to anyone")

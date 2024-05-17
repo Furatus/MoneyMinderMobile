@@ -1,5 +1,8 @@
 package com.example.moneymindermobile.data
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,6 +18,7 @@ import com.example.GetGroupByIdQuery
 import com.example.GetUserDetailsByIdQuery
 import com.example.GetUsersByUsernameQuery
 import com.example.InviteUserMutation
+import com.example.PayDuesToGroupMutation
 import com.example.RefuseInvitationMutation
 import com.example.SignInMutation
 import com.example.SignOutMutation
@@ -136,6 +140,43 @@ class MainViewModel(
                 println(e)
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    private suspend fun GetPaymentUrl(groupId: String): String {
+        var result: String = ""
+        println("starting payment for group $groupId")
+        _isLoading.value = false
+        try {
+            val response =
+                apolloClient.mutation(PayDuesToGroupMutation(groupId = groupId)).execute().also {
+                    println(it)
+                }
+            _graphQlError.value = response.errors
+            result = response.data?.payDuesToGroup ?: ""
+        } catch (e: ApolloException) {
+            println(e)
+        } finally {
+            _isLoading.value = false
+        }
+        return result
+    }
+
+    public fun OpenPaymentUrlIfNeeded(groupId: String, context: Context) {
+        viewModelScope.launch {
+            println("calling payment for group $groupId")
+            val paymentUrlData = GetPaymentUrl(groupId)
+            println("payment url: $paymentUrlData")
+            if (paymentUrlData.isNotEmpty()) {
+                try {
+                    val paymentUrl = Uri.parse(paymentUrlData)
+                    val intent = Intent(Intent.ACTION_VIEW, paymentUrl)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    context.startActivity(intent)
+                } catch (e: Exception) {
+                    println(e)
+                }
             }
         }
     }

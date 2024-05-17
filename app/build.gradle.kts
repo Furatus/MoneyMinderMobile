@@ -107,6 +107,8 @@ dependencies {
     //pdf viewer
     implementation(libs.bouquet)
 
+    //mpandroidchart
+    implementation(libs.mpandroidchart)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

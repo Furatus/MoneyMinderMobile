@@ -80,12 +80,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.apollographql.apollo3.api.Optional
@@ -98,6 +100,13 @@ import com.example.moneymindermobile.ui.components.EntityImage
 import com.example.moneymindermobile.ui.components.FilePickingOrCamera
 import com.example.moneymindermobile.ui.components.convertImageByteArrayToBitmap
 import com.example.type.KeyValuePairOfGuidAndNullableOfDecimalInput
+import com.github.mikephil.charting.charts.HorizontalBarChart
+import com.github.mikephil.charting.data.BarData
+import com.github.mikephil.charting.data.BarDataSet
+import com.github.mikephil.charting.data.BarEntry
+import com.github.mikephil.charting.data.Entry
+import com.github.mikephil.charting.highlight.Highlight
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener
 import com.rizzi.bouquet.ResourceType
 import com.rizzi.bouquet.VerticalPDFReader
 import com.rizzi.bouquet.rememberVerticalPdfReaderState
@@ -552,7 +561,10 @@ fun GroupDetailsScreen(
 
 
                                     } else {
-                                        ViewExpenses(groupState = groupById, navController = navController)
+                                        ViewExpenses(
+                                            groupState = groupById,
+                                            navController = navController
+                                        )
                                     }
                                     Button(
                                         onClick = { isAddExpenseSheetOpen = true },
@@ -569,7 +581,9 @@ fun GroupDetailsScreen(
                                 }
                             }
                             if (index == 1) {
-                                Text(text = "I'm another custom text")
+                                val userGroups: List<GetGroupByIdQuery.UserGroup> =
+                                    groupById.userGroups
+                                BalanceGraph(userGroups = userGroups)
 
                             }
                         }
@@ -578,6 +592,80 @@ fun GroupDetailsScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun BalanceGraph(userGroups: List<GetGroupByIdQuery.UserGroup>) {
+    val entries = userGroups.mapIndexed { index, userGroup ->
+        BarEntry(index.toFloat(), userGroup.balance.toFloat())
+    }
+
+    val barDataSet = BarDataSet(entries, "Balances")
+    barDataSet.setColors(
+        userGroups.map { userGroup ->
+            if (userGroup.balance < 0) Color.Red.toArgb() else Color.Green.toArgb()
+        }
+    )
+
+    val barData = BarData(barDataSet)
+
+    val selectedUserName = remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            if (selectedUserName.value != "") {
+                Text(text = selectedUserName.value)
+            }
+        }
+
+        AndroidView(
+            factory = { context ->
+                HorizontalBarChart(context).apply {
+                    data = barData
+                    setFitBars(true)
+                    animateY(500)
+                    xAxis.setDrawGridLines(false)
+                    xAxis.setDrawAxisLine(false)
+                    xAxis.setDrawLabels(false)
+                    axisLeft.setDrawGridLines(false)
+                    axisLeft.setDrawAxisLine(false)
+                    axisLeft.setDrawLabels(false)
+                    axisRight.setDrawGridLines(false)
+                    axisRight.setDrawAxisLine(false)
+                    axisRight.setDrawLabels(false)
+                    description.isEnabled = false
+                    setScaleEnabled(false)
+                    legend.isEnabled = false
+
+                    setOnChartValueSelectedListener(object : OnChartValueSelectedListener {
+                        override fun onValueSelected(e: Entry?, h: Highlight?) {
+                            val index = e?.x?.toInt()
+                            if (index != null) {
+                                selectedUserName.value = userGroups[index].user.userName ?: ""
+                            }
+                        }
+
+                        override fun onNothingSelected() {
+                            selectedUserName.value = ""
+                        }
+
+                    })
+
+                    invalidate()
+                }
+            }, modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp)
+        )
     }
 }
 
@@ -902,7 +990,7 @@ fun AddExpenseUserList(
                         )
                         LaunchedEffect(key1 = checkedUserList) {
                             userlist(checkedUserList)
-                            checkedUserList.forEach{item ->
+                            checkedUserList.forEach { item ->
                                 Log.d("user_boolean_list_launched", "$item")
                             }
                         }
@@ -939,7 +1027,7 @@ fun ViewExpenses(groupState: GetGroupByIdQuery.GroupById, navController: NavHost
                 modifier = Modifier
                     .padding(8.dp)
                     .height(80.dp), onClick = {
-                        navController.navigate("${Routes.EXPENSE_DETAILS}/${item.id}")
+                    navController.navigate("${Routes.EXPENSE_DETAILS}/${item.id}")
                 }
             ) {
                 Box(
@@ -987,7 +1075,10 @@ fun matchListUserAndExpenses(
     val matchedList = mutableListOf<KeyValuePairOfGuidAndNullableOfDecimalInput>()
 
     for (i in userList.indices) {
-        Log.d("Expense_User", "id ${expenseList[i].key} ,value ${expenseList[i].value} , boolean ${userList[i]}")
+        Log.d(
+            "Expense_User",
+            "id ${expenseList[i].key} ,value ${expenseList[i].value} , boolean ${userList[i]}"
+        )
         if (userList[i]) {
             val expense = expenseList.getOrNull(i)
             matchedList.add(

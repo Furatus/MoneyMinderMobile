@@ -10,6 +10,15 @@ query GetGroupById($groupId:UUID!){
                 userName
                 avatarUrl
             }
+            balance
+            payTo {
+                amountToPay
+                payToUser {
+                    id
+                    userName
+                    avatarUrl
+                }
+            }
         }
         owner {
             id

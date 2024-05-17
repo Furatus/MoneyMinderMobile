@@ -39,6 +39,7 @@ type UserGroup {
     group: Group!
     joinedAt: DateTime!
     payTo: PayDueTo!
+    balance: Decimal!
 }
 
 input InvitationInsertDtoInput {
@@ -530,6 +531,7 @@ input UserGroupFilterInput {
     group: GroupFilterInput
     joinedAt: DateTimeOperationFilterInput
     payTo: PayDueToFilterInput
+    balance: DecimalOperationFilterInput
 }
 
 type Invitation {

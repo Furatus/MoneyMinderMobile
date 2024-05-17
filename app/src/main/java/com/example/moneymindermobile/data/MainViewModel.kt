@@ -27,6 +27,7 @@ import com.example.UploadGroupImagePictureMutation
 import com.example.UploadProfilePictureMutation
 import com.example.UserInfoMutation
 import com.example.moneymindermobile.data.api.ApiEndpoints
+import com.example.type.ExpenseType
 import com.example.type.KeyValuePairOfGuidAndNullableOfDecimalInput
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -406,6 +407,7 @@ class MainViewModel(
         amount: Float,
         description: String,
         groupId: String,
+        expenseType: ExpenseType,
         userAmountsList: List<KeyValuePairOfGuidAndNullableOfDecimalInput>
     ) {
         viewModelScope.launch {
@@ -416,6 +418,7 @@ class MainViewModel(
                         amount = amount,
                         description = description,
                         groupid = groupId,
+                        expenseType = expenseType,
                         userAmountsList = userAmountsList
                     )
                 ).execute()

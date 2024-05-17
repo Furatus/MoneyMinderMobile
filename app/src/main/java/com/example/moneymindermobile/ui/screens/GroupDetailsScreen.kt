@@ -102,6 +102,7 @@ import com.example.moneymindermobile.data.api.ApiEndpoints
 import com.example.moneymindermobile.ui.components.EntityImage
 import com.example.moneymindermobile.ui.components.FilePickingOrCamera
 import com.example.moneymindermobile.ui.components.convertImageByteArrayToBitmap
+import com.example.type.ExpenseType
 import com.example.type.KeyValuePairOfGuidAndNullableOfDecimalInput
 import com.github.mikephil.charting.charts.HorizontalBarChart
 import com.github.mikephil.charting.data.BarData
@@ -642,11 +643,15 @@ fun DisplayPayDueTo(payDueTo: GetGroupByIdQuery.PayTo, viewModel: MainViewModel,
     ) {
         if (payDueTo.payToUser != null) {
             Text(text = "⚠\uFE0F You owe ${payDueTo.amountToPay} € to ${payDueTo.payToUser.userName}")
-            Button(onClick = { viewModel.OpenPaymentUrlIfNeeded(groupId = groupId, context = context) }) {
+            Button(onClick = {
+                viewModel.OpenPaymentUrlIfNeeded(
+                    groupId = groupId,
+                    context = context
+                )
+            }) {
                 Text(text = "Pay now")
             }
-        }
-        else
+        } else
             Text(text = "✅ You don't owe anything to anyone")
     }
 }
@@ -908,6 +913,33 @@ fun BottomSheetAddExpense(
                                 .fillMaxWidth()
                                 .padding(8.dp)
                         )
+                        // ExpenseType
+                        val expenseType = rememberSaveable { mutableStateOf(ExpenseType.OTHER) }
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp)
+                        ) {
+                            Text(text = "Expense Type", modifier = Modifier.padding(8.dp))
+                            ExpenseType.entries.forEach { type ->
+                                if (type != ExpenseType.UNKNOWN__)
+                                    LazyRow(
+                                        modifier = Modifier
+                                            .align(Alignment.Start)
+                                    ) {
+                                        items(listOf(type)) { type ->
+                                            Checkbox(
+                                                checked = expenseType.value == type,
+                                                onCheckedChange = {
+                                                    expenseType.value = type
+                                                }
+                                            )
+                                            Text(text = type.name)
+                                        }
+                                    }
+                            }
+                        }
+
                         //DatePickerDialog(onDismissRequest = {}, confirmButton = {}) { DatePicker(state = datePickerState)}
                         Text(text = "Sharing", modifier = Modifier.padding(8.dp))
                         var expenseList: List<KeyValuePairOfGuidAndNullableOfDecimalInput> =
@@ -928,6 +960,7 @@ fun BottomSheetAddExpense(
                                 amount = expenseAmountField.value.toFloat(),
                                 description = expenseTitleTextField.value,
                                 groupId = groupState.id.toString(),
+                                expenseType = expenseType.value,
                                 userAmountsList = expenseListFinal
                             )
 
@@ -994,10 +1027,10 @@ fun AddExpenseUserList(
     userlist: (List<Boolean>) -> Unit
 ) {
     val members = groupState.userGroups
-    LazyColumn(
+    LazyRow(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally
+            .padding(8.dp)
     ) {
         val updatedExpenseList =
             mutableStateListOf<KeyValuePairOfGuidAndNullableOfDecimalInput>().apply {
@@ -1025,26 +1058,40 @@ fun AddExpenseUserList(
             //var amountUserInput by rememberSaveable { mutableStateOf(currentValue) }
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                Card(modifier = Modifier.fillMaxWidth(0.7f)) {
-                    Box(Modifier.fillMaxSize()) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                Card {
+                    Column {
+                        Row(
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             EntityImage(
                                 imageLink = member.user.avatarUrl,
                                 title = member.user.userName
                             )
-                            Spacer(modifier = Modifier.padding(8.dp))
                             member.user.userName?.let { Text(text = it) }
                             //Text(text = "${index}")
+                            Checkbox(
+                                checked = checked,
+                                onCheckedChange = {
+                                    checked = it
+                                    checkedUserList[index] = it
+                                    Log.d("userchecked", "${it}")
+                                },
+                            )
                         }
-                        Checkbox(
-                            checked = checked,
-                            onCheckedChange = {
-                                checked = it
-                                checkedUserList[index] = it
-                                Log.d("userchecked", "${it}")
-                            },
-                            modifier = Modifier.align(Alignment.CenterEnd)
-                        )
+                        Row {
+                            TextField(value = amountUserInput, onValueChange = {
+                                amountUserInput = it
+                                //Log.d("exp", "${it.toIntOrNull()}")
+                                updatedExpenseList.set(
+                                    index = index,
+                                    element = KeyValuePairOfGuidAndNullableOfDecimalInput(
+                                        member.user.id,
+                                        Optional.present(it.toFloatOrNull())
+                                    )
+                                )
+                            }, modifier = Modifier.fillMaxWidth())
+                        }
                         LaunchedEffect(key1 = checkedUserList) {
                             userlist(checkedUserList)
                             checkedUserList.forEach { item ->
@@ -1053,18 +1100,6 @@ fun AddExpenseUserList(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.padding(10.dp))
-                TextField(value = amountUserInput, onValueChange = {
-                    amountUserInput = it
-                    //Log.d("exp", "${it.toIntOrNull()}")
-                    updatedExpenseList.set(
-                        index = index,
-                        element = KeyValuePairOfGuidAndNullableOfDecimalInput(
-                            member.user.id,
-                            Optional.present(it.toFloatOrNull())
-                        )
-                    )
-                }, modifier = Modifier.fillMaxWidth())
 
                 LaunchedEffect(updatedExpenseList) {
                     expenseDetailsList(updatedExpenseList)

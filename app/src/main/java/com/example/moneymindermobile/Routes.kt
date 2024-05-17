@@ -9,4 +9,5 @@ object Routes {
     const val EXPENSE_DETAILS = "expenseDetails"
     const val USER_STATS = "userStats"
     const val GROUP_STATS = "groupStats"
+    const val USER_PAYMENT = "userPayments"
 }

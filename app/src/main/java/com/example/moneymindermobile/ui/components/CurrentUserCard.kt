@@ -1,4 +1,6 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3Api::class
+)
 
 package com.example.moneymindermobile.ui.components
 
@@ -21,6 +23,7 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -186,11 +189,43 @@ fun ModalBottomSheetCurrentUser(
                     }
                     
                     Spacer(modifier = Modifier.padding(8.dp))
-                    
-                    Button(onClick = { navController.navigate(Routes.USER_STATS) }) {
-                        Row (horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                            Icon(imageVector = Icons.Filled.Build, contentDescription = "stats icon", modifier = Modifier.padding(8.dp))
-                            Text(text = "Stats")
+
+                    Row (horizontalArrangement = Arrangement.SpaceBetween) {
+
+                        Button(onClick = {
+                            onSheetDismiss(false)
+                            navController.navigate(Routes.USER_STATS)
+                        }) {
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Build,
+                                    contentDescription = "stats icon",
+                                    modifier = Modifier.padding(8.dp)
+                                )
+                                Text(text = "Stats")
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.padding(8.dp))
+
+                        Button(onClick = {
+                            onSheetDismiss(false)
+                            navController.navigate(Routes.USER_PAYMENT)
+                        }) {
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Star,
+                                    contentDescription = "payments icon",
+                                    modifier = Modifier.padding(8.dp)
+                                )
+                                Text(text = "Payments")
+                            }
                         }
                     }
 

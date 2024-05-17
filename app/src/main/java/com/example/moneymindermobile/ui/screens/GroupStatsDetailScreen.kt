@@ -1,7 +1,9 @@
 package com.example.moneymindermobile.ui.screens
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -12,6 +14,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.moneymindermobile.Routes
 import com.example.moneymindermobile.data.MainViewModel
@@ -23,7 +26,7 @@ import com.rizzi.bouquet.rememberVerticalPdfReaderState
 fun GroupStatsDetailScreen (viewModel: MainViewModel, navController: NavHostController, groupId : String?) {
     val currentUser = rememberSaveable { mutableStateOf("") }
     Column {
-        Button(onClick = { navController.navigate("${Routes.GROUP_DETAILS}/${groupId}") }) {
+        Button(onClick = { navController.navigate("${Routes.GROUP_DETAILS}/${groupId}") }, modifier = Modifier.padding(8.dp), contentPadding = PaddingValues(1.dp)) {
             Icon(
                 imageVector = Icons.Filled.ArrowBack,
                 contentDescription = "back to main menu button"

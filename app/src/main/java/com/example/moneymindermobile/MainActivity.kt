@@ -23,6 +23,7 @@ import com.example.moneymindermobile.ui.screens.LoginScreen
 import com.example.moneymindermobile.ui.screens.RegistrationScreen
 import com.example.moneymindermobile.ui.screens.StatsScreen
 import com.example.moneymindermobile.ui.screens.UserDetailsScreen
+import com.example.moneymindermobile.ui.screens.UserPaymentScreen
 import com.example.moneymindermobile.ui.theme.MoneyMinderMobileTheme
 import okhttp3.JavaNetCookieJar
 import okhttp3.OkHttpClient
@@ -103,6 +104,10 @@ class MainActivity : ComponentActivity() {
                             viewModel.refreshGraphQlError()
                             val groupId = navBackStackEntry.arguments?.getString("groupId")
                             GroupStatsDetailScreen(viewModel = viewModel, navController = navController, groupId = groupId)
+                        }
+                        composable(Routes.USER_PAYMENT) {
+                            viewModel.refreshGraphQlError()
+                            UserPaymentScreen(viewModel = viewModel, navController = navController)
                         }
                     }
                 }

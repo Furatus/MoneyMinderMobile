@@ -3,6 +3,7 @@ query CurrentUser{
         id
         userName
         avatarUrl
+        ribExtension
         userGroups {
             group {
                 id

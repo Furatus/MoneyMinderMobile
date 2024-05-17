@@ -17,11 +17,13 @@ import com.example.moneymindermobile.data.MainViewModel
 import com.example.moneymindermobile.data.api.ApiEndpoints
 import com.example.moneymindermobile.ui.screens.ExpenseDetailScreen
 import com.example.moneymindermobile.ui.screens.GroupDetailsScreen
+import com.example.moneymindermobile.ui.screens.GroupStatsDetailScreen
 import com.example.moneymindermobile.ui.screens.HomeScreen
 import com.example.moneymindermobile.ui.screens.LoginScreen
 import com.example.moneymindermobile.ui.screens.RegistrationScreen
 import com.example.moneymindermobile.ui.screens.StatsScreen
 import com.example.moneymindermobile.ui.screens.UserDetailsScreen
+import com.example.moneymindermobile.ui.screens.UserPaymentScreen
 import com.example.moneymindermobile.ui.theme.MoneyMinderMobileTheme
 import okhttp3.JavaNetCookieJar
 import okhttp3.OkHttpClient
@@ -97,6 +99,15 @@ class MainActivity : ComponentActivity() {
                         composable(Routes.USER_STATS){
                             viewModel.refreshGraphQlError()
                             StatsScreen(viewModel = viewModel, navController = navController)
+                        }
+                        composable("${Routes.GROUP_STATS}/{groupId}") {navBackStackEntry ->
+                            viewModel.refreshGraphQlError()
+                            val groupId = navBackStackEntry.arguments?.getString("groupId")
+                            GroupStatsDetailScreen(viewModel = viewModel, navController = navController, groupId = groupId)
+                        }
+                        composable(Routes.USER_PAYMENT) {
+                            viewModel.refreshGraphQlError()
+                            UserPaymentScreen(viewModel = viewModel, navController = navController)
                         }
                     }
                 }

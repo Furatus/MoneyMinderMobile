@@ -1,0 +1,3 @@
+mutation groupPdfSumUp($GroupId : UUID!) {
+    groupPdfSumUp(groupId: $GroupId)
+}

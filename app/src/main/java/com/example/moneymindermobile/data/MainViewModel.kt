@@ -17,6 +17,7 @@ import com.example.ExpenseJustificationMutation
 import com.example.GetGroupByIdQuery
 import com.example.GetUserDetailsByIdQuery
 import com.example.GetUsersByUsernameQuery
+import com.example.GroupPdfSumUpMutation
 import com.example.InviteUserMutation
 import com.example.PayDuesToGroupMutation
 import com.example.RefuseInvitationMutation
@@ -116,6 +117,9 @@ class MainViewModel(
     private val _userInfoResponse: MutableStateFlow<ByteArray?> = MutableStateFlow(null)
     val userInfoResponse = _userInfoResponse
 
+    private val _groupPdfSumUpResponse: MutableStateFlow<ByteArray?> = MutableStateFlow(null)
+    val groupPdfSumUpResponse = _groupPdfSumUpResponse
+
 
     fun refreshGraphQlError() {
         viewModelScope.launch {
@@ -146,7 +150,7 @@ class MainViewModel(
     }
 
     private suspend fun GetPaymentUrl(groupId: String): String {
-        var result: String = ""
+        var result = ""
         println("starting payment for group $groupId")
         _isLoading.value = false
         try {
@@ -654,6 +658,43 @@ class MainViewModel(
                                 val inputStream: InputStream = responseBody.byteStream()
                                 val byteArray = inputStream.use { it.readBytes() }
                                 _userInfoResponse.value = byteArray
+                                responseBody.close()
+                            }
+                        }
+                    })
+                }
+                _graphQlError.value = response.errors
+            } catch (e: ApolloException) {
+                println(e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun groupPdfSumUp(groupId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val response =
+                    apolloClient.mutation(GroupPdfSumUpMutation(groupId)).execute()
+                var userInfoLink = response.data?.groupPdfSumUp
+                userInfoLink?.let { Log.d("link", it) }
+                Log.d("resp", response.data.toString())
+                userInfoLink =
+                    userInfoLink?.replace("localhost", ApiEndpoints.API_ADDRESS)
+                if (userInfoLink != null) {
+                    val request = Request.Builder().url(userInfoLink).build()
+                    okHttpClient.newCall(request).enqueue(object : Callback {
+                        override fun onFailure(call: Call, e: IOException) {
+                            Log.e("Http-Error", "Erreur lors de la requête : ${e.message}")
+                        }
+
+                        override fun onResponse(call: Call, response: Response) {
+                            response.body?.let { responseBody ->
+                                val inputStream: InputStream = responseBody.byteStream()
+                                val byteArray = inputStream.use { it.readBytes() }
+                                _groupPdfSumUpResponse.value = byteArray
                                 responseBody.close()
                             }
                         }

@@ -22,8 +22,7 @@ import com.rizzi.bouquet.rememberVerticalPdfReaderState
 @Composable
 fun StatsScreen(viewModel: MainViewModel, navController: NavHostController) {
     val currentUser = rememberSaveable { mutableStateOf("") }
-
-    // Vérifie si l'expenseId a changé
+    
     if (currentUser.value != viewModel.currentUserResponse.collectAsState().value?.currentUser?.id) {
         currentUser.value = viewModel.currentUserResponse.collectAsState().value?.currentUser?.id as String
         viewModel.userInfo()

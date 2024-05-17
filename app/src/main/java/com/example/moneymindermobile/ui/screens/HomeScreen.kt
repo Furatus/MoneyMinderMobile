@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalFoundationApi::class)
+@file:OptIn(ExperimentalFoundationApi::class, ExperimentalFoundationApi::class)
 
 package com.example.moneymindermobile.ui.screens
 
@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,8 +30,10 @@ import androidx.compose.material.icons.outlined.MailOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -51,7 +54,6 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
 import com.example.CurrentUserQuery
 import com.example.moneymindermobile.Routes
@@ -60,6 +62,7 @@ import com.example.moneymindermobile.ui.components.CurrentUserCard
 import com.example.moneymindermobile.ui.components.EntityImage
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
     val firstFetchDone by rememberSaveable { mutableStateOf(false) }
@@ -154,7 +157,9 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
                                     }
                                     Button(
                                         onClick = { showDialog = true },
-                                        modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp)
+                                        modifier = Modifier
+                                            .align(Alignment.BottomCenter)
+                                            .padding(8.dp)
                                     ) {
                                         Text(text = "Create new group")
                                     }
@@ -197,13 +202,13 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
 
             }
             if (showDialog) {
-                Dialog(onDismissRequest = {
+                ModalBottomSheet(onDismissRequest = {
                     createGroupDescription = ""
                     createGroupName = ""
                     showDialog = false
                 }) {
                     val keyboardController = LocalSoftwareKeyboardController.current
-                    Column {
+                    Column( modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                         TextField(
                             value = createGroupName,
                             leadingIcon = {
@@ -242,9 +247,9 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
                                 description = createGroupDescription
                             )
                             val newGroupId = newGroupResponse?.createGroup?.id
+                            showDialog = false
                             if (newGroupId != null) {
                                 navController.navigate("${Routes.GROUP_DETAILS}/${newGroupId}")
-                                showDialog = false
                             }
                         }) {
                             Row(
@@ -260,7 +265,7 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
                         LazyColumn(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(100.dp)
+                                .height(40.dp)
                         ) {
                             if (graphQlErrors != null) {
                                 items(graphQlErrors!!) { error ->
@@ -273,6 +278,7 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
                             }
                         }
                     }
+                    Spacer(modifier = Modifier.padding(30.dp))
                 }
             }
         }

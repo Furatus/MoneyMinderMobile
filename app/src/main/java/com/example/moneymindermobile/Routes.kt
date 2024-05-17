@@ -8,4 +8,5 @@ object Routes {
     const val USER_DETAILS = "userDetails"
     const val EXPENSE_DETAILS = "expenseDetails"
     const val USER_STATS = "userStats"
+    const val GROUP_STATS = "groupStats"
 }

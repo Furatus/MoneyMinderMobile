@@ -43,12 +43,14 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ExitToApp
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
@@ -140,6 +142,8 @@ fun GroupDetailsScreen(
     val scope = rememberCoroutineScope()
     val groupNameTextField = rememberSaveable { mutableStateOf("default name") }
     val groupDescriptionTextField = rememberSaveable { mutableStateOf("default description") }
+
+    var isGraphOpened by rememberSaveable { mutableStateOf(false) }
 
     val tabItems = listOf(
         TabItem(
@@ -581,10 +585,41 @@ fun GroupDetailsScreen(
                                 }
                             }
                             if (index == 1) {
-                                val userGroups: List<GetGroupByIdQuery.UserGroup> =
-                                    groupById.userGroups
-                                BalanceGraph(userGroups = userGroups)
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                ) {
+                                    Button(onClick = { isGraphOpened = true }) {
+                                        Icon(
+                                            imageVector = Icons.Filled.List,
+                                            contentDescription = "Show Graph"
+                                        )
+                                        Text(text = "Show Graph")
+                                    }
 
+                                    val currentUserGroup =
+                                        groupById.userGroups.filter { it.user.id == currentUserId }
+                                    val currentPayDueTo = currentUserGroup.first().payTo
+
+                                    DisplayPayDueTo(
+                                        payDueTo = currentPayDueTo
+                                    )
+
+                                    if (isGraphOpened) {
+                                        AlertDialog(
+                                            onDismissRequest = { isGraphOpened = false },
+                                            confirmButton = {
+                                                Button(onClick = {
+                                                    isGraphOpened = false
+                                                }) { Text(text = "Close") }
+                                            },
+                                            title = { Text(text = "Group Balance") },
+                                            text = { BalanceGraph(groupById.userGroups) },
+                                            modifier = Modifier
+                                                .padding(8.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
 
@@ -592,6 +627,20 @@ fun GroupDetailsScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun DisplayPayDueTo(payDueTo: GetGroupByIdQuery.PayTo) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        if (payDueTo.payToUser != null) {
+            Text(text = "⚠\uFE0F You owe ${payDueTo.amountToPay} € to ${payDueTo.payToUser.userName}")
+        }
+        else
+            Text(text = "✅ You don't owe anything to anyone")
     }
 }
 
@@ -609,6 +658,7 @@ fun BalanceGraph(userGroups: List<GetGroupByIdQuery.UserGroup>) {
     )
 
     val barData = BarData(barDataSet)
+    barData.barWidth = 0.5f
 
     val selectedUserName = remember { mutableStateOf("") }
 

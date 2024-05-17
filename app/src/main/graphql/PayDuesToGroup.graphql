@@ -1,0 +1,3 @@
+mutation PayDuesToGroup($groupId: UUID!){
+    payDuesToGroup(groupId: $groupId)
+}

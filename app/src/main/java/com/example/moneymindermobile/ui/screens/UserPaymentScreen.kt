@@ -19,9 +19,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Tab
@@ -66,10 +64,6 @@ fun UserPaymentScreen(viewModel: MainViewModel, navController: NavHostController
                     title = "Bank Details",
                     unselectedIcon = Icons.Outlined.Email,
                     selectedIcon = Icons.Filled.Email
-                ), TabItem(
-                    title = "Payment Service",
-                    unselectedIcon = Icons.Outlined.Star,
-                    selectedIcon = Icons.Filled.Star
                 )
             )
 
@@ -197,9 +191,6 @@ fun UserPaymentScreen(viewModel: MainViewModel, navController: NavHostController
                                 }
                             }
                         }
-                    }
-                    if (index == 1) {
-                        Text(text = "Not implemented yet")
                     }
                 }
 

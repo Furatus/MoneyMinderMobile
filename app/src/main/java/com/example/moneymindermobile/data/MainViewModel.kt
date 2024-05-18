@@ -19,6 +19,7 @@ import com.example.GetUserDetailsByIdQuery
 import com.example.GetUsersByUsernameQuery
 import com.example.GroupPdfSumUpMutation
 import com.example.InviteUserMutation
+import com.example.ModifyMyselfMutation
 import com.example.PayDuesToGroupMutation
 import com.example.RefuseInvitationMutation
 import com.example.SignInMutation
@@ -826,6 +827,17 @@ class MainViewModel(
                 println(e)
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    fun modifyMyself(username: String , email: String , password: String) {
+        viewModelScope.launch {
+            try {
+                val response = apolloClient.mutation(ModifyMyselfMutation(username = username,email = email, password = password)).execute()
+                _graphQlError.value = response.errors
+            } catch (e: ApolloException) {
+                println(e)
             }
         }
     }

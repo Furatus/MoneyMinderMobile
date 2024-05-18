@@ -4,6 +4,7 @@ query CurrentUser{
         userName
         avatarUrl
         ribExtension
+        email
         userGroups {
             group {
                 id

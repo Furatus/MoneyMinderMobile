@@ -1,0 +1,5 @@
+mutation modifyMyself($username : String!, $email :String!, $password : String!) {
+    modifyMyself(appUserModifyDto: {email: $email, userName: $username, password: $password}) {
+        id
+    }
+}

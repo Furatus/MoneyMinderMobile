@@ -4,7 +4,7 @@
     ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
     ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
     ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
-    ExperimentalFoundationApi::class
+    ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class
 )
 
 package com.example.moneymindermobile.ui.screens
@@ -147,7 +147,7 @@ fun GroupDetailsScreen(
 
     val scope = rememberCoroutineScope()
 
-    currentGroupByIdState.value?.groupById?.name?.let { Log.d("current-group", it) }
+    //currentGroupByIdState.value?.groupById?.name?.let { Log.d("current-group", it) }
     val groupNameTextField = rememberSaveable { mutableStateOf(currentGroupByIdState.value?.groupById?.name ?: "Default name") }
     val groupDescriptionTextField = rememberSaveable { mutableStateOf(currentGroupByIdState.value?.groupById?.description ?: "Default description") }
 

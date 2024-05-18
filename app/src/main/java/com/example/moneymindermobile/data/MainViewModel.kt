@@ -168,7 +168,7 @@ class MainViewModel(
         return result
     }
 
-    public fun OpenPaymentUrlIfNeeded(groupId: String, context: Context) {
+    fun OpenPaymentUrlIfNeeded(groupId: String, context: Context) {
         viewModelScope.launch {
             println("calling payment for group $groupId")
             val paymentUrlData = GetPaymentUrl(groupId)
@@ -625,6 +625,7 @@ class MainViewModel(
     }
 
     fun signOut() {
+        _registerResponse.value = null
         _signInResponse.value = null
         viewModelScope.launch {
             try {

@@ -1,0 +1,3 @@
+mutation userRib ($ribUserId : UUID!) {
+    userRib(ribUserId: $ribUserId)
+}

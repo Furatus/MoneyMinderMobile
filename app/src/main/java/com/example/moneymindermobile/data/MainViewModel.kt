@@ -26,7 +26,9 @@ import com.example.SignOutMutation
 import com.example.UploadExpenseJustificationMutation
 import com.example.UploadGroupImagePictureMutation
 import com.example.UploadProfilePictureMutation
+import com.example.UploadUserRibMutation
 import com.example.UserInfoMutation
+import com.example.UserRibMutation
 import com.example.moneymindermobile.data.api.ApiEndpoints
 import com.example.type.ExpenseType
 import com.example.type.KeyValuePairOfGuidAndNullableOfDecimalInput
@@ -120,6 +122,8 @@ class MainViewModel(
     private val _groupPdfSumUpResponse: MutableStateFlow<ByteArray?> = MutableStateFlow(null)
     val groupPdfSumUpResponse = _groupPdfSumUpResponse
 
+    private val _userRibResponse: MutableStateFlow<ByteArray?> = MutableStateFlow(null)
+    val userRibResponse = _userRibResponse
 
     fun refreshGraphQlError() {
         viewModelScope.launch {
@@ -696,6 +700,122 @@ class MainViewModel(
                                 val inputStream: InputStream = responseBody.byteStream()
                                 val byteArray = inputStream.use { it.readBytes() }
                                 _groupPdfSumUpResponse.value = byteArray
+                                responseBody.close()
+                            }
+                        }
+                    })
+                }
+                _graphQlError.value = response.errors
+            } catch (e: ApolloException) {
+                println(e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun uploadUserRib(bankDetailsByteArray : ByteArray) {
+        val fileExtension = determineFileExtension(bankDetailsByteArray)
+
+        viewModelScope.launch(Dispatchers.IO) {
+            println("uploading bank details")
+            _isLoading.value = true
+            try {
+                // Step 1: Execute the UploadProfilePicture mutation to get the unique upload link
+                val uploadLinkResponse =
+                    apolloClient.mutation(UploadUserRibMutation()).execute()
+                var uploadLink: String? = uploadLinkResponse.data?.uploadUserRib ?: ""
+                uploadLink?.let { Log.d("link", it) }
+                Log.d("resp", uploadLinkResponse.data.toString())
+                uploadLink = uploadLink?.replace("localhost", ApiEndpoints.API_ADDRESS)
+
+                val mediaType = when (fileExtension) {
+                    "pdf" -> "application/pdf"
+                    else -> "application/octet-stream"
+                }
+
+                Log.d("file_ext", mediaType)
+
+
+                val requestBody = MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart(
+                        "file",
+                        "filename.${fileExtension}",
+                        bankDetailsByteArray.toRequestBody(
+                            mediaType.toMediaTypeOrNull(),
+                            0,
+                            bankDetailsByteArray.size
+                        )
+                    )
+                    .build()
+
+                val regex =
+                    Regex("^http://[a-zA-Z0-9.\\-]+(:\\d+)?/ribs/[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$")
+                if (uploadLink != null && regex.matches(uploadLink)) {
+                    val request = Request.Builder().url(uploadLink).post(requestBody).build()
+
+                    okHttpClient.newCall(request).enqueue(object : Callback {
+                        override fun onFailure(call: Call, e: IOException) {
+                            Log.e("Http-Error", "Erreur lors de la requête : ${e.message}")
+                        }
+
+                        override fun onResponse(call: Call, response: Response) {
+                            val responseCode = response.code
+
+                            when (responseCode) {
+                                200 -> {
+                                    Log.d(
+                                        "http-response",
+                                        "Successfully uploaded details : ${response.body?.string()}"
+                                    )
+                                }
+
+                                500 -> {
+                                    Log.d(
+                                        "http-response",
+                                        "internal Error : ${response.body?.string()}"
+                                    )
+                                }
+                            }
+                        }
+                    })
+                }
+            } catch (e: ApolloException) {
+                println("ApolloException: $e")
+            } catch (e: IOException) {
+                println("IOException: $e")
+            } finally {
+                withContext(Dispatchers.Main) {
+                    _isLoading.value = false
+                }
+            }
+        }
+    }
+
+    fun userRib (userId : String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val response =
+                    apolloClient.mutation(UserRibMutation(userId)).execute()
+                var userInfoLink = response.data?.userRib
+                userInfoLink?.let { Log.d("link", it) }
+                Log.d("resp", response.data.toString())
+                userInfoLink =
+                    userInfoLink?.replace("localhost", ApiEndpoints.API_ADDRESS)
+                if (userInfoLink != null) {
+                    val request = Request.Builder().url(userInfoLink).build()
+                    okHttpClient.newCall(request).enqueue(object : Callback {
+                        override fun onFailure(call: Call, e: IOException) {
+                            Log.e("Http-Error", "Erreur lors de la requête : ${e.message}")
+                        }
+
+                        override fun onResponse(call: Call, response: Response) {
+                            response.body?.let { responseBody ->
+                                val inputStream: InputStream = responseBody.byteStream()
+                                val byteArray = inputStream.use { it.readBytes() }
+                                _userRibResponse.value = byteArray
                                 responseBody.close()
                             }
                         }

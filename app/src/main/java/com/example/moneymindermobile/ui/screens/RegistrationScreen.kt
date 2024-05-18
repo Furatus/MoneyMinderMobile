@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -138,7 +139,10 @@ fun RegistrationScreenUI(
                     },
                     onValueChange = { usernameState.value = it },
                     label = { Text("Username") },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Done,
+                        autoCorrect = false,
+                        keyboardType = KeyboardType.Text),
                     keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -154,7 +158,10 @@ fun RegistrationScreenUI(
                     },
                     onValueChange = { emailState.value = it },
                     label = { Text("Email") },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Done,
+                        autoCorrect = false,
+                        keyboardType = KeyboardType.Email),
                     keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -170,7 +177,10 @@ fun RegistrationScreenUI(
                     },
                     onValueChange = { passwordState.value = it },
                     label = { Text("Password") },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Done,
+                        autoCorrect = false,
+                        keyboardType = KeyboardType.Text),
                     keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
                     modifier = Modifier
                         .fillMaxWidth()

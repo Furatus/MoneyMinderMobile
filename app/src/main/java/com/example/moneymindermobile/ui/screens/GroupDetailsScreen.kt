@@ -3,7 +3,8 @@
     ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
     ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
     ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class
+    ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
+    ExperimentalFoundationApi::class
 )
 
 package com.example.moneymindermobile.ui.screens
@@ -90,6 +91,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -840,199 +842,203 @@ fun BottomSheetAddExpense(
         }
 
 
-            TabRow(selectedTabIndex = selectedTabIndex) {
-                tabItems.forEachIndexed { index, item ->
-                    Tab(selected = index == selectedTabIndex, onClick = {
-                        scope.launch {
-                            pagerState.animateScrollToPage(index)
-                        }
-                        selectedTabIndex = index
+        TabRow(selectedTabIndex = selectedTabIndex) {
+            tabItems.forEachIndexed { index, item ->
+                Tab(selected = index == selectedTabIndex, onClick = {
+                    scope.launch {
+                        pagerState.animateScrollToPage(index)
+                    }
+                    selectedTabIndex = index
+                },
+                    text = {
+                        Text(text = item.title)
                     },
-                        text = {
-                            Text(text = item.title)
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = if (index == selectedTabIndex) item.selectedIcon else item.unselectedIcon,
-                                contentDescription = "${item.title} Icon"
-                            )
-                        })
-                }
+                    icon = {
+                        Icon(
+                            imageVector = if (index == selectedTabIndex) item.selectedIcon else item.unselectedIcon,
+                            contentDescription = "${item.title} Icon"
+                        )
+                    })
             }
+        }
 
-            HorizontalPager(
-                state = pagerState, modifier = Modifier
-                    .fillMaxWidth()
-            ) { index ->
-                run {
-                    if (index == 0) {
-                        var isSubmitEnabled by rememberSaveable { mutableStateOf(false) }
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
+        HorizontalPager(
+            state = pagerState, modifier = Modifier
+                .fillMaxWidth()
+        ) { index ->
+            run {
+                if (index == 0) {
+                    var isSubmitEnabled by rememberSaveable { mutableStateOf(false) }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        Text(
+                            text = "Add Expense",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                        TextField(
+                            value = expenseTitleTextField.value,
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Info,
+                                    contentDescription = "Description"
+                                )
+                            },
+                            onValueChange = {
+                                expenseTitleTextField.value = it
+                                isSubmitEnabled =
+                                    if (expenseTitleTextField.value != "" && expenseAmountField.value.toFloatOrNull() != null) true else false
+                            },
+                            label = { Text("Description") },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .verticalScroll(rememberScrollState())
+                                .padding(8.dp),
+                        )
+
+                        TextField(
+                            value = expenseAmountField.value,
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Info,
+                                    contentDescription = "Total Amount"
+                                )
+                            },
+                            onValueChange = {
+                                expenseAmountField.value = it
+                                isSubmitEnabled =
+                                    if (expenseTitleTextField.value != "" && expenseAmountField.value.toFloatOrNull() != null) true else false
+                            },
+                            label = { Text("Total Amount") },
+                            keyboardOptions = KeyboardOptions(
+                                imeAction = ImeAction.Done,
+                                autoCorrect = false,
+                                keyboardType = KeyboardType.Number
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp)
+                        )
+                        // ExpenseType
+                        val expenseType = rememberSaveable { mutableStateOf(ExpenseType.OTHER) }
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp)
                         ) {
-                            Text(
-                                text = "Add Expense",
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(8.dp)
-                            )
-                            TextField(
-                                value = expenseTitleTextField.value,
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Filled.Info,
-                                        contentDescription = "Description"
-                                    )
-                                },
-                                onValueChange = {
-                                    expenseTitleTextField.value = it
-                                    isSubmitEnabled =
-                                        if (expenseTitleTextField.value != "" && expenseAmountField.value.toFloatOrNull() != null) true else false
-                                },
-                                label = { Text("Description") },
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(8.dp),
-                            )
-
-                            TextField(
-                                value = expenseAmountField.value,
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Filled.Info,
-                                        contentDescription = "Total Amount"
-                                    )
-                                },
-                                onValueChange = {
-                                    expenseAmountField.value = it
-                                    isSubmitEnabled =
-                                        if (expenseTitleTextField.value != "" && expenseAmountField.value.toFloatOrNull() != null) true else false
-                                },
-                                label = { Text("Total Amount") },
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(8.dp)
-                            )
-                            // ExpenseType
-                            val expenseType = rememberSaveable { mutableStateOf(ExpenseType.OTHER) }
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(8.dp)
-                            ) {
-                                Text(text = "Expense Type", modifier = Modifier.padding(8.dp))
-                                ExpenseType.entries.forEach { type ->
-                                    if (type != ExpenseType.UNKNOWN__)
-                                        LazyRow(
-                                            modifier = Modifier
-                                                .align(Alignment.Start)
-                                        ) {
-                                            items(listOf(type)) { type ->
-                                                Checkbox(
-                                                    checked = expenseType.value == type,
-                                                    onCheckedChange = {
-                                                        expenseType.value = type
-                                                    }
-                                                )
-                                                Text(text = type.name)
-                                            }
-                                        }
-                                }
-                            }
-
-                            //DatePickerDialog(onDismissRequest = {}, confirmButton = {}) { DatePicker(state = datePickerState)}
-                            Text(text = "Sharing", modifier = Modifier.padding(8.dp))
-                            var expenseList: List<KeyValuePairOfGuidAndNullableOfDecimalInput> =
-                                emptyList()
-                            var userlist: List<Boolean> = emptyList()
-
-                            AddExpenseUserList(
-                                groupState = groupState,
-                                expenseDetailsList = { list -> expenseList = list },
-                                userlist = { list -> userlist = list })
-                            Button(onClick = {
-                                val expenseListFinal =
-                                    matchListUserAndExpenses(userlist, expenseList)
-                                scope.launch {
-                                    sheetStateAddExpense.hide()
-                                    onSheetDismissed(false)
-                                }
-                                viewModel.addUserExpense(
-                                    amount = expenseAmountField.value.toFloat(),
-                                    description = expenseTitleTextField.value,
-                                    groupId = groupState.id.toString(),
-                                    expenseType = expenseType.value,
-                                    userAmountsList = expenseListFinal
-                                )
-
-                                //if (viewModel.addUserExpenseResponse?.value.
-                            }, enabled = isSubmitEnabled) {
-                                Text(text = "Submit")
-                            }
-
-                            Spacer(modifier = Modifier.padding(30.dp))
-                        }
-                    }
-                    if (index == 1) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Spacer(modifier = Modifier.padding(8.dp))
-                            FilePickingOrCamera(
-                                listOf(
-                                    "jpg",
-                                    "jpeg",
-                                    "png",
-                                    "pdf"
-                                )
-                            ) { outputArray ->
-                                byteArrayJustification = outputArray
-                            }
-                            if (byteArrayJustification?.isEmpty() == false) {
-                                if (determineFileExtension(byteArrayJustification!!) == "jpg" || determineFileExtension(
-                                        byteArrayJustification!!
-                                    ) == "png"
-                                ) {
-                                    val bitmapImage =
-                                        byteArrayJustification?.let {
-                                            convertImageByteArrayToBitmap(
-                                                it
+                            Text(text = "Expense Type", modifier = Modifier.padding(8.dp))
+                            ExpenseType.entries.forEach { type ->
+                                if (type != ExpenseType.UNKNOWN__)
+                                    LazyRow(
+                                        modifier = Modifier
+                                            .align(Alignment.Start)
+                                    ) {
+                                        items(listOf(type)) { type ->
+                                            Checkbox(
+                                                checked = expenseType.value == type,
+                                                onCheckedChange = {
+                                                    expenseType.value = type
+                                                }
                                             )
+                                            Text(text = type.name)
                                         }
-                                    if (bitmapImage != null) {
-                                        Spacer(modifier = Modifier.padding(8.dp))
-                                        Image(
-                                            bitmap = bitmapImage.asImageBitmap(),
-                                            contentDescription = "User file"
+                                    }
+                            }
+                        }
+
+                        //DatePickerDialog(onDismissRequest = {}, confirmButton = {}) { DatePicker(state = datePickerState)}
+                        Text(text = "Sharing", modifier = Modifier.padding(8.dp))
+                        var expenseList: List<KeyValuePairOfGuidAndNullableOfDecimalInput> =
+                            emptyList()
+                        var userlist: List<Boolean> = emptyList()
+
+                        AddExpenseUserList(
+                            groupState = groupState,
+                            expenseDetailsList = { list -> expenseList = list },
+                            userlist = { list -> userlist = list })
+                        Button(onClick = {
+                            val expenseListFinal =
+                                matchListUserAndExpenses(userlist, expenseList)
+                            scope.launch {
+                                sheetStateAddExpense.hide()
+                                onSheetDismissed(false)
+                            }
+                            viewModel.addUserExpense(
+                                amount = expenseAmountField.value.toFloat(),
+                                description = expenseTitleTextField.value,
+                                groupId = groupState.id.toString(),
+                                expenseType = expenseType.value,
+                                userAmountsList = expenseListFinal
+                            )
+
+                            //if (viewModel.addUserExpenseResponse?.value.
+                        }, enabled = isSubmitEnabled) {
+                            Text(text = "Submit")
+                        }
+
+                        Spacer(modifier = Modifier.padding(30.dp))
+                    }
+                }
+                if (index == 1) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Spacer(modifier = Modifier.padding(8.dp))
+                        FilePickingOrCamera(
+                            listOf(
+                                "jpg",
+                                "jpeg",
+                                "png",
+                                "pdf"
+                            )
+                        ) { outputArray ->
+                            byteArrayJustification = outputArray
+                        }
+                        if (byteArrayJustification?.isEmpty() == false) {
+                            if (determineFileExtension(byteArrayJustification!!) == "jpg" || determineFileExtension(
+                                    byteArrayJustification!!
+                                ) == "png"
+                            ) {
+                                val bitmapImage =
+                                    byteArrayJustification?.let {
+                                        convertImageByteArrayToBitmap(
+                                            it
                                         )
                                     }
-                                }
-                                if (determineFileExtension(byteArrayJustification!!) == "pdf") {
-                                    Text(text = "Pdf picked")
-                                    val pdfState = rememberVerticalPdfReaderState(
-                                        resource = ResourceType.Base64(
-                                            convertByteArrayToBase64(
-                                                byteArrayJustification!!
-                                            )
-                                        ),
-                                        isZoomEnable = true
-                                    )
-                                    VerticalPDFReader(
-                                        state = pdfState,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
+                                if (bitmapImage != null) {
+                                    Spacer(modifier = Modifier.padding(8.dp))
+                                    Image(
+                                        bitmap = bitmapImage.asImageBitmap(),
+                                        contentDescription = "User file"
                                     )
                                 }
                             }
-
-                            Spacer(modifier = Modifier.padding(30.dp))
+                            if (determineFileExtension(byteArrayJustification!!) == "pdf") {
+                                Text(text = "Pdf picked")
+                                val pdfState = rememberVerticalPdfReaderState(
+                                    resource = ResourceType.Base64(
+                                        convertByteArrayToBase64(
+                                            byteArrayJustification!!
+                                        )
+                                    ),
+                                    isZoomEnable = true
+                                )
+                                VerticalPDFReader(
+                                    state = pdfState,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                )
+                            }
                         }
+
+                        Spacer(modifier = Modifier.padding(30.dp))
                     }
                 }
             }
+        }
     }
 }
 
@@ -1100,17 +1106,24 @@ fun AddExpenseUserList(
                             )
                         }
                         Row {
-                            TextField(value = amountUserInput, onValueChange = {
-                                amountUserInput = it
-                                //Log.d("exp", "${it.toIntOrNull()}")
-                                updatedExpenseList.set(
-                                    index = index,
-                                    element = KeyValuePairOfGuidAndNullableOfDecimalInput(
-                                        member.user.id,
-                                        Optional.present(it.toFloatOrNull())
+                            TextField(
+                                value = amountUserInput, onValueChange = {
+                                    amountUserInput = it
+                                    //Log.d("exp", "${it.toIntOrNull()}")
+                                    updatedExpenseList.set(
+                                        index = index,
+                                        element = KeyValuePairOfGuidAndNullableOfDecimalInput(
+                                            member.user.id,
+                                            Optional.present(it.toFloatOrNull())
+                                        )
                                     )
+                                }, modifier = Modifier.fillMaxWidth(),
+                                keyboardOptions = KeyboardOptions(
+                                    imeAction = ImeAction.Done,
+                                    autoCorrect = false,
+                                    keyboardType = KeyboardType.Number
                                 )
-                            }, modifier = Modifier.fillMaxWidth())
+                            )
                         }
                         LaunchedEffect(key1 = checkedUserList) {
                             userlist(checkedUserList)

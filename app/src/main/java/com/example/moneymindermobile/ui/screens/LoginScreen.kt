@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+
 import androidx.compose.material.IconButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
@@ -35,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -136,7 +138,10 @@ fun LoginScreenUI(
                     },
                     onValueChange = { usernameState.value = it },
                     label = { Text("Username") },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Done,
+                        autoCorrect = false,
+                        keyboardType = KeyboardType.Text),
                     keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -164,7 +169,10 @@ fun LoginScreenUI(
                     },
                     onValueChange = { passwordState.value = it },
                     label = { Text("Password") },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Done,
+                        autoCorrect = false,
+                        keyboardType = KeyboardType.Text),
                     keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
                     modifier = Modifier
                         .fillMaxWidth()

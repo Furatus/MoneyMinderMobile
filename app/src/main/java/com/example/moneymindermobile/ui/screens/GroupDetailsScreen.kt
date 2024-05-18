@@ -146,8 +146,10 @@ fun GroupDetailsScreen(
     val getUsersByUsernameResponse = viewModel.getUsersByUsernameResponse.collectAsState()
 
     val scope = rememberCoroutineScope()
-    val groupNameTextField = rememberSaveable { mutableStateOf("default name") }
-    val groupDescriptionTextField = rememberSaveable { mutableStateOf("default description") }
+
+    currentGroupByIdState.value?.groupById?.name?.let { Log.d("current-group", it) }
+    val groupNameTextField = rememberSaveable { mutableStateOf(currentGroupByIdState.value?.groupById?.name ?: "Default name") }
+    val groupDescriptionTextField = rememberSaveable { mutableStateOf(currentGroupByIdState.value?.groupById?.description ?: "Default description") }
 
     var isGraphOpened by rememberSaveable { mutableStateOf(false) }
 
@@ -968,13 +970,16 @@ fun BottomSheetAddExpense(
                                 sheetStateAddExpense.hide()
                                 onSheetDismissed(false)
                             }
-                            viewModel.addUserExpense(
+
+                             viewModel.addUserExpense(
                                 amount = expenseAmountField.value.toFloat(),
                                 description = expenseTitleTextField.value,
                                 groupId = groupState.id.toString(),
                                 expenseType = expenseType.value,
                                 userAmountsList = expenseListFinal
                             )
+
+
 
                             //if (viewModel.addUserExpenseResponse?.value.
                         }, enabled = isSubmitEnabled) {
@@ -1079,7 +1084,7 @@ fun AddExpenseUserList(
 
         itemsIndexed(members) { index, member ->
             var amountUserInput by rememberSaveable { mutableStateOf("") }
-            var checked by remember { mutableStateOf(true) }
+            var checked by rememberSaveable { mutableStateOf(true) }
             //val currentValue = expenseList.getOrNull(index)?.value?.toString() ?: ""
             //var amountUserInput by rememberSaveable { mutableStateOf(currentValue) }
 
@@ -1101,7 +1106,8 @@ fun AddExpenseUserList(
                                 onCheckedChange = {
                                     checked = it
                                     checkedUserList[index] = it
-                                    Log.d("userchecked", "${it}")
+                                    userlist(checkedUserList)
+                                    Log.d("userchecked", "${checkedUserList[index]}")
                                 },
                             )
                         }
@@ -1125,17 +1131,12 @@ fun AddExpenseUserList(
                                 )
                             )
                         }
-                        LaunchedEffect(key1 = checkedUserList) {
-                            userlist(checkedUserList)
-                            checkedUserList.forEach { item ->
-                                Log.d("user_boolean_list_launched", "$item")
-                            }
-                        }
                     }
                 }
 
                 LaunchedEffect(updatedExpenseList) {
                     expenseDetailsList(updatedExpenseList)
+                    Log.d("textfield_exepense", "changed !")
                 }
             }
             Spacer(modifier = Modifier.padding(8.dp))

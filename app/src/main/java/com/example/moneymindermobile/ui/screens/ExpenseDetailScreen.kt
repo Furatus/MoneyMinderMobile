@@ -262,6 +262,12 @@ fun ExpenseDetailScreen(
                                                 .fillMaxWidth()
                                         )
                                     }
+                                    Button(onClick = {
+                                        viewModel.uploadExpenseJustification(expenseId, expenseByteArray!!)
+                                        navController.navigate("${Routes.EXPENSE_DETAILS}/${expenseId}")
+                                    }) {
+                                        Text(text = "Submit")
+                                    }
                                 } else {
 
                                     Text(text = "Failed to fetch Image")
@@ -293,6 +299,19 @@ fun ExpenseDetailScreen(
                                 }
 
                                 if (byteArrayJustification?.isEmpty() == false) {
+
+                                    Button(onClick = {
+                                        if (expenseId != null) {
+                                            viewModel.uploadExpenseJustification(
+                                                expenseId,
+                                                byteArrayJustification!!
+                                            )
+                                            navController.navigate("${Routes.EXPENSE_DETAILS}/${expense[0].id}")
+                                        }
+                                    }, modifier = Modifier.fillMaxWidth()) {
+                                        Text(text = "Submit justification")
+                                    }
+
                                     if (determineFileExtension(byteArrayJustification!!) == "jpg" || determineFileExtension(
                                             byteArrayJustification!!
                                         ) == "png"
@@ -313,7 +332,6 @@ fun ExpenseDetailScreen(
                                         }
                                     }
                                     if (determineFileExtension(byteArrayJustification!!) == "pdf") {
-                                        Text(text = "Pdf picked")
                                         val pdfState = rememberVerticalPdfReaderState(
                                             resource = ResourceType.Base64(
                                                 convertByteArrayToBase64(
@@ -327,17 +345,6 @@ fun ExpenseDetailScreen(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                         )
-                                    }
-                                    Button(onClick = {
-                                        if (expenseId != null) {
-                                            viewModel.uploadExpenseJustification(
-                                                expenseId,
-                                                byteArrayJustification!!
-                                            )
-                                            navController.navigate("${Routes.EXPENSE_DETAILS}/${expense[0].id}")
-                                        }
-                                    }) {
-                                        Text(text = "Submit justification")
                                     }
                                 }
                             }

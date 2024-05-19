@@ -4,7 +4,8 @@
     ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
     ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
     ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
-    ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class
+    ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3Api::class
 )
 
 package com.example.moneymindermobile.ui.screens
@@ -42,6 +43,7 @@ import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExitToApp
@@ -198,6 +200,7 @@ fun GroupDetailsScreen(
                                 byteArrayOf()
                             )
                         }
+                        var infoChanged by rememberSaveable { mutableStateOf(false) }
 
                         if (!isChangingPicture) {
 
@@ -255,6 +258,20 @@ fun GroupDetailsScreen(
 
                                 Spacer(modifier = Modifier.padding(8.dp))
 
+                                Button(onClick = {
+                                    scope.launch {
+                                        isOptionsSheetOpen = false
+                                        sheetStateOptions.hide()
+                                    }.invokeOnCompletion {
+                                        navController.navigate("${Routes.GROUP_STATS}/$groupId")
+                                    }
+                                }) {
+                                    Icon(imageVector = Icons.Filled.Build, contentDescription = "stats icon")
+                                    Text(text = "Group Stats")
+                                }
+
+                                Spacer(modifier = Modifier.padding(8.dp))
+
                                 TextField(
                                     value = groupNameTextField.value,
                                     leadingIcon = {
@@ -263,7 +280,10 @@ fun GroupDetailsScreen(
                                             contentDescription = "Group name"
                                         )
                                     },
-                                    onValueChange = { groupNameTextField.value = it },
+                                    onValueChange = {
+                                        groupNameTextField.value = it
+                                        infoChanged = true
+                                                    },
                                     label = { Text("Name") },
                                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                     modifier = Modifier
@@ -278,7 +298,10 @@ fun GroupDetailsScreen(
                                             contentDescription = "Group Description"
                                         )
                                     },
-                                    onValueChange = { groupDescriptionTextField.value = it },
+                                    onValueChange = {
+                                        groupDescriptionTextField.value = it
+                                        infoChanged = true
+                                                    },
                                     label = { Text("Description") },
                                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                     modifier = Modifier
@@ -296,6 +319,11 @@ fun GroupDetailsScreen(
                                                     imageByteArray!!
                                                 )
                                                 refreshTrigger.intValue++
+                                            }
+                                            if (infoChanged) {
+                                                if (groupId != null) {
+                                                    viewModel.modifyGroup(groupId = groupId, name = groupNameTextField.value, description = groupDescriptionTextField.value )
+                                                }
                                             }
                                         }
                                 }) {
@@ -1217,9 +1245,4 @@ fun matchListUserAndExpenses(
     }
 
     return matchedList
-}
-
-@Composable
-fun GroupBalance() {
-
 }

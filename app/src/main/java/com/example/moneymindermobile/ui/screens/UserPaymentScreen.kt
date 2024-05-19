@@ -113,6 +113,29 @@ fun UserPaymentScreen(viewModel: MainViewModel, navController: NavHostController
                     .weight(1f)
             ) { index ->
                 run {
+                    var documentByteArray: ByteArray? by rememberSaveable {
+                        mutableStateOf(
+                            byteArrayOf()
+                        )
+                    }
+
+                    FilePicker(
+                        show = showFilePicker,
+                        fileExtensions = listOf("pdf")
+                    ) { platformFile ->
+                        showFilePicker = false
+                        if (platformFile != null) scope.launch {
+                            documentByteArray =
+                                readBytesFromUri(
+                                    context,
+                                    Uri.parse(platformFile.path)
+                                )
+                            documentByteArray?.let { viewModel.uploadUserRib(it) }
+                            navController.navigate(Routes.USER_PAYMENT)
+                        }
+
+                    }
+
                     if (index == 0) {
                         if (currentUser.ribExtension != null) {
 
@@ -125,29 +148,8 @@ fun UserPaymentScreen(viewModel: MainViewModel, navController: NavHostController
 
                             val documentViewByteArray =
                                 viewModel.userRibResponse.collectAsState().value
-                            var documentByteArray: ByteArray? by rememberSaveable {
-                                mutableStateOf(
-                                    byteArrayOf()
-                                )
-                            }
+
                             Column (horizontalAlignment = Alignment.CenterHorizontally) {
-
-                                FilePicker(
-                                    show = showFilePicker,
-                                    fileExtensions = listOf("pdf")
-                                ) { platformFile ->
-                                    showFilePicker = false
-                                    if (platformFile != null) scope.launch {
-                                        documentByteArray =
-                                            readBytesFromUri(
-                                                context,
-                                                Uri.parse(platformFile.path)
-                                            )
-                                        documentByteArray?.let { viewModel.uploadUserRib(it) }
-                                        navController.navigate(Routes.USER_PAYMENT)
-                                    }
-
-                                }
 
                                 if (documentViewByteArray != null) {
                                     val pdfState = rememberVerticalPdfReaderState(

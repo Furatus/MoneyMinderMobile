@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExitToApp
@@ -659,6 +660,15 @@ fun GroupDetailsScreen(
                                         groupId = groupById.id.toString()
                                     )
 
+                                    if (currentUserId != null) {
+                                        HandleManualPaymentVerification(
+                                            userGroup = groupById.userGroups,
+                                            viewModel = viewModel,
+                                            groupId = groupById.id.toString(),
+                                            currentUserId = currentUserId
+                                        )
+                                    }
+
                                     if (isGraphOpened) {
                                         AlertDialog(
                                             onDismissRequest = { isGraphOpened = false },
@@ -688,11 +698,48 @@ fun GroupDetailsScreen(
                                             groupMessages = groupMessages,
                                             currentUserId = currentUserId,
                                             viewModel = viewModel,
-                                            groupId = groupById.id.toString()
+                                            groupId = groupById.id.toString(),
                                         )
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun HandleManualPaymentVerification(
+    userGroup: List<GetGroupByIdQuery.UserGroup>,
+    viewModel: MainViewModel,
+    groupId: String,
+    currentUserId: String
+) {
+    Text(text = "Manual Payment Verification")
+    LazyColumn {
+        items(userGroup) { currentUserGroup ->
+            if (currentUserGroup.payTo.payToUser?.id == currentUserId) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                ) {
+                    Column {
+                        Text(text = "${currentUserGroup.user.userName} owes you ${currentUserGroup.payTo.amountToPay} EUR")
+                        Button(onClick = {
+                            viewModel.manualPaymentVerification(
+                                groupId = groupId,
+                                userId = currentUserGroup.user.id.toString()
+                            )
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = "Manual payment verification button"
+                            )
+                            Text(text = "Manual verification")
                         }
                     }
                 }
@@ -1286,7 +1333,6 @@ fun AddExpenseUserList(
 
 @Composable
 fun ViewExpenses(groupState: GetGroupByIdQuery.GroupById, navController: NavHostController) {
-
     LazyColumn(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center) {
         items(groupState.expenses) { item ->
             Card(modifier = Modifier

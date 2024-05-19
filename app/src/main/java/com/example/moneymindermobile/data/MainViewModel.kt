@@ -21,6 +21,7 @@ import com.example.GetUserDetailsByIdQuery
 import com.example.GetUsersByUsernameQuery
 import com.example.GroupPdfSumUpMutation
 import com.example.InviteUserMutation
+import com.example.ManualVerificationMutation
 import com.example.ModifyGroupMutation
 import com.example.ModifyMyselfMutation
 import com.example.PayDuesToGroupMutation
@@ -424,6 +425,22 @@ class MainViewModel(
         }
     }
 
+    fun manualPaymentVerification(groupId: String, userId: String) {
+        viewModelScope.launch {
+            println("manually verifying payment")
+            try {
+                val response = apolloClient.mutation(
+                    ManualVerificationMutation(
+                        groupId = groupId,
+                        userId = userId
+                    )
+                ).execute()
+            } catch (e: ApolloException) {
+                println(e)
+            }
+        }
+    }
+
     fun addUserExpense(
         amount: Float,
         description: String,
@@ -432,6 +449,7 @@ class MainViewModel(
         userAmountsList: List<KeyValuePairOfGuidAndNullableOfDecimalInput>
     ) {
         viewModelScope.launch {
+            println("adding user expense")
             _isLoading.value = true
             try {
                 val response = apolloClient.mutation(
@@ -444,6 +462,7 @@ class MainViewModel(
                     )
                 ).execute()
                 response.data.let {
+                    println("response: $it")
                     _addUserExpenseResponse.value = it
                 }
                 _graphQlError.value = response.errors
@@ -843,10 +862,16 @@ class MainViewModel(
         }
     }
 
-    fun modifyMyself(username: String , email: String , password: String) {
+    fun modifyMyself(username: String, email: String, password: String) {
         viewModelScope.launch {
             try {
-                val response = apolloClient.mutation(ModifyMyselfMutation(username = username,email = email, password = password)).execute()
+                val response = apolloClient.mutation(
+                    ModifyMyselfMutation(
+                        username = username,
+                        email = email,
+                        password = password
+                    )
+                ).execute()
                 _graphQlError.value = response.errors
             } catch (e: ApolloException) {
                 println(e)
@@ -858,12 +883,17 @@ class MainViewModel(
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                val response = apolloClient.mutation(ModifyGroupMutation(id = groupId,name = name,description = description)).execute()
+                val response = apolloClient.mutation(
+                    ModifyGroupMutation(
+                        id = groupId,
+                        name = name,
+                        description = description
+                    )
+                ).execute()
                 _graphQlError.value = response.errors
             } catch (e: ApolloException) {
                 println(e)
-            }
-            finally {
+            } finally {
                 _isLoading.value = false
             }
         }

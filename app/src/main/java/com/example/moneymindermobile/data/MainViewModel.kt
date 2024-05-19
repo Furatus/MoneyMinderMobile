@@ -21,6 +21,8 @@ import com.example.GetUserDetailsByIdQuery
 import com.example.GetUsersByUsernameQuery
 import com.example.GroupPdfSumUpMutation
 import com.example.InviteUserMutation
+import com.example.ModifyGroupMutation
+import com.example.ModifyMyselfMutation
 import com.example.PayDuesToGroupMutation
 import com.example.RefuseInvitationMutation
 import com.example.SendGroupMessageMutation
@@ -836,6 +838,32 @@ class MainViewModel(
             } catch (e: ApolloException) {
                 println(e)
             } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun modifyMyself(username: String , email: String , password: String) {
+        viewModelScope.launch {
+            try {
+                val response = apolloClient.mutation(ModifyMyselfMutation(username = username,email = email, password = password)).execute()
+                _graphQlError.value = response.errors
+            } catch (e: ApolloException) {
+                println(e)
+            }
+        }
+    }
+
+    fun modifyGroup(groupId: String, name: String, description: String) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                val response = apolloClient.mutation(ModifyGroupMutation(id = groupId,name = name,description = description)).execute()
+                _graphQlError.value = response.errors
+            } catch (e: ApolloException) {
+                println(e)
+            }
+            finally {
                 _isLoading.value = false
             }
         }

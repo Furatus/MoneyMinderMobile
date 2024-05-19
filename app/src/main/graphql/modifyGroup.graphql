@@ -1,0 +1,5 @@
+mutation modifyGroup ($id : UUID!, $name : String!, $description : String!) {
+    modifyGroup(groupModifyDto: {description: $description, name: $name, groupId: $id}) {
+        id
+    }
+}

@@ -19,9 +19,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Tab
@@ -50,6 +48,7 @@ import com.rizzi.bouquet.VerticalPDFReader
 import com.rizzi.bouquet.rememberVerticalPdfReaderState
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun UserPaymentScreen(viewModel: MainViewModel, navController: NavHostController) {
 
@@ -66,10 +65,6 @@ fun UserPaymentScreen(viewModel: MainViewModel, navController: NavHostController
                     title = "Bank Details",
                     unselectedIcon = Icons.Outlined.Email,
                     selectedIcon = Icons.Filled.Email
-                ), TabItem(
-                    title = "Payment Service",
-                    unselectedIcon = Icons.Outlined.Star,
-                    selectedIcon = Icons.Filled.Star
                 )
             )
 
@@ -119,6 +114,29 @@ fun UserPaymentScreen(viewModel: MainViewModel, navController: NavHostController
                     .weight(1f)
             ) { index ->
                 run {
+                    var documentByteArray: ByteArray? by rememberSaveable {
+                        mutableStateOf(
+                            byteArrayOf()
+                        )
+                    }
+
+                    FilePicker(
+                        show = showFilePicker,
+                        fileExtensions = listOf("pdf")
+                    ) { platformFile ->
+                        showFilePicker = false
+                        if (platformFile != null) scope.launch {
+                            documentByteArray =
+                                readBytesFromUri(
+                                    context,
+                                    Uri.parse(platformFile.path)
+                                )
+                            documentByteArray?.let { viewModel.uploadUserRib(it) }
+                            navController.navigate(Routes.USER_PAYMENT)
+                        }
+
+                    }
+
                     if (index == 0) {
                         if (currentUser.ribExtension != null) {
 
@@ -131,29 +149,8 @@ fun UserPaymentScreen(viewModel: MainViewModel, navController: NavHostController
 
                             val documentViewByteArray =
                                 viewModel.userRibResponse.collectAsState().value
-                            var documentByteArray: ByteArray? by rememberSaveable {
-                                mutableStateOf(
-                                    byteArrayOf()
-                                )
-                            }
+
                             Column (horizontalAlignment = Alignment.CenterHorizontally) {
-
-                                FilePicker(
-                                    show = showFilePicker,
-                                    fileExtensions = listOf("pdf")
-                                ) { platformFile ->
-                                    showFilePicker = false
-                                    if (platformFile != null) scope.launch {
-                                        documentByteArray =
-                                            readBytesFromUri(
-                                                context,
-                                                Uri.parse(platformFile.path)
-                                            )
-                                        documentByteArray?.let { viewModel.uploadUserRib(it) }
-                                        navController.navigate(Routes.USER_PAYMENT)
-                                    }
-
-                                }
 
                                 if (documentViewByteArray != null) {
                                     val pdfState = rememberVerticalPdfReaderState(
@@ -197,9 +194,6 @@ fun UserPaymentScreen(viewModel: MainViewModel, navController: NavHostController
                                 }
                             }
                         }
-                    }
-                    if (index == 1) {
-                        Text(text = "Not implemented yet")
                     }
                 }
 

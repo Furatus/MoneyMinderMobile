@@ -66,6 +66,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(Routes.LOGIN) {
                             viewModel.refreshGraphQlError()
+                            BackHandler(true) {
+
+                            }
                             LoginScreen(viewModel = viewModel, navController = navController)
                         }
                         composable(Routes.REGISTER) {

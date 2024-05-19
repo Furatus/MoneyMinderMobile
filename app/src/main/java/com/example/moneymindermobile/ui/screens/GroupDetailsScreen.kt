@@ -1,14 +1,9 @@
 @file:OptIn(
-    ExperimentalMaterial3Api::class,
-    ExperimentalFoundationApi::class,
-    ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
+    ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
     ExperimentalFoundationApi::class
 )
 
@@ -48,6 +43,7 @@ import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExitToApp
@@ -219,6 +215,7 @@ fun GroupDetailsScreen(
                                 byteArrayOf()
                             )
                         }
+                        var infoChanged by rememberSaveable { mutableStateOf(false) }
 
                         if (!isChangingPicture) {
 
@@ -274,6 +271,20 @@ fun GroupDetailsScreen(
 
                                 Spacer(modifier = Modifier.padding(8.dp))
 
+                                Button(onClick = {
+                                    scope.launch {
+                                        isOptionsSheetOpen = false
+                                        sheetStateOptions.hide()
+                                    }.invokeOnCompletion {
+                                        navController.navigate("${Routes.GROUP_STATS}/$groupId")
+                                    }
+                                }) {
+                                    Icon(imageVector = Icons.Filled.Build, contentDescription = "stats icon")
+                                    Text(text = "Group Stats")
+                                }
+
+                                Spacer(modifier = Modifier.padding(8.dp))
+
                                 TextField(
                                     value = groupNameTextField.value,
                                     leadingIcon = {
@@ -282,7 +293,10 @@ fun GroupDetailsScreen(
                                             contentDescription = "Group name"
                                         )
                                     },
-                                    onValueChange = { groupNameTextField.value = it },
+                                    onValueChange = {
+                                        groupNameTextField.value = it
+                                        infoChanged = true
+                                                    },
                                     label = { Text("Name") },
                                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                     modifier = Modifier
@@ -297,7 +311,10 @@ fun GroupDetailsScreen(
                                             contentDescription = "Group Description"
                                         )
                                     },
-                                    onValueChange = { groupDescriptionTextField.value = it },
+                                    onValueChange = {
+                                        groupDescriptionTextField.value = it
+                                        infoChanged = true
+                                                    },
                                     label = { Text("Description") },
                                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                     modifier = Modifier
@@ -305,16 +322,23 @@ fun GroupDetailsScreen(
                                         .padding(8.dp),
                                 )
                                 Button(onClick = {
-                                    scope.launch { sheetStateOptions.hide() }.invokeOnCompletion {
-                                        isOptionsSheetOpen = false
-                                        if (imageByteArray?.size != 0 && imageByteArray != null) {
-                                            val group: String = groupId!!
-                                            viewModel.uploadGroupImagePicture(
-                                                groupId = group, imageByteArray!!
-                                            )
-                                            refreshTrigger.intValue++
+                                    scope.launch { sheetStateOptions.hide() }
+                                        .invokeOnCompletion {
+                                            isOptionsSheetOpen = false
+                                            if (imageByteArray?.size != 0 && imageByteArray != null) {
+                                                val group: String = groupId!!
+                                                viewModel.uploadGroupImagePicture(
+                                                    groupId = group,
+                                                    imageByteArray!!
+                                                )
+                                                refreshTrigger.intValue++
+                                            }
+                                            if (infoChanged) {
+                                                if (groupId != null) {
+                                                    viewModel.modifyGroup(groupId = groupId, name = groupNameTextField.value, description = groupDescriptionTextField.value )
+                                                }
+                                            }
                                         }
-                                    }
                                 }) {
                                     Text(text = "Submit changes")
                                 }
@@ -322,7 +346,9 @@ fun GroupDetailsScreen(
                         } else {
                             FilePickingOrCamera(
                                 fileType = listOf(
-                                    "png", "jpg", "jpeg"
+                                    "png",
+                                    "jpg",
+                                    "jpeg"
                                 )
                             ) { outputByteArray ->
                                 imageByteArray = outputByteArray
@@ -1087,6 +1113,7 @@ fun BottomSheetAddExpense(
                                 expenseType = expenseType.value,
                                 userAmountsList = expenseListFinal
                             )
+
 
 
                             //if (viewModel.addUserExpenseResponse?.value.

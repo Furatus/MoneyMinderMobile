@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
@@ -112,8 +113,10 @@ fun ModalBottomSheetCurrentUser(
     val sheetStateCurrentUser = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var changedUserState by rememberSaveable { mutableStateOf(false) }
     var changedUserPicture by rememberSaveable { mutableStateOf(false) }
-    var usernameTextField by rememberSaveable { mutableStateOf(currentUser?.userName ?: "") }
-    var passwordTextField by rememberSaveable { mutableStateOf("*******") }
+    var usernameTextField by rememberSaveable { mutableStateOf(currentUser?.userName ?: "Error while fetching user") }
+    var emailTextField by rememberSaveable { mutableStateOf(currentUser?.email ?: "Error while fetching email") }
+    var passwordTextField by rememberSaveable { mutableStateOf("") }
+
     val scope = rememberCoroutineScope()
     var imageByteArray: ByteArray? by rememberSaveable {
         mutableStateOf(
@@ -249,6 +252,25 @@ fun ModalBottomSheetCurrentUser(
                     )
 
                     TextField(
+                        value = emailTextField,
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Email,
+                                contentDescription = "Description"
+                            )
+                        },
+                        onValueChange = {
+                            emailTextField = it
+                            changedUserState = true
+                        },
+                        label = { Text("Email") },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                    )
+
+                    TextField(
                         value = passwordTextField,
                         leadingIcon = {
                             Icon(
@@ -287,6 +309,10 @@ fun ModalBottomSheetCurrentUser(
                                         imageByteArray = imageByteArray!!,
                                         username = currentUser.userName!!
                                     )
+                                }
+
+                                if (changedUserState) {
+                                    mainViewModel.modifyMyself(username = usernameTextField, email = emailTextField, password = passwordTextField)
                                 }
                             }
 

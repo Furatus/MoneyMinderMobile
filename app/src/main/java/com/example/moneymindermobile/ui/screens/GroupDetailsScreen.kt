@@ -4,7 +4,7 @@
     ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
     ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
     ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
-    ExperimentalFoundationApi::class
+    ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class
 )
 
 package com.example.moneymindermobile.ui.screens
@@ -1258,6 +1258,7 @@ fun AddExpenseUserList(
                     )
                 }
             }
+
         val checkedUserList = mutableStateListOf<Boolean>().apply {
             repeat(members.size) { _ ->
                 add(
@@ -1265,6 +1266,7 @@ fun AddExpenseUserList(
                 )
             }
         }
+        userlist(checkedUserList)
 
         itemsIndexed(members) { index, member ->
             var amountUserInput by rememberSaveable { mutableStateOf("") }

@@ -279,7 +279,10 @@ fun GroupDetailsScreen(
                                         navController.navigate("${Routes.GROUP_STATS}/$groupId")
                                     }
                                 }) {
-                                    Icon(imageVector = Icons.Filled.Build, contentDescription = "stats icon")
+                                    Icon(
+                                        imageVector = Icons.Filled.Build,
+                                        contentDescription = "stats icon"
+                                    )
                                     Text(text = "Group Stats")
                                 }
 
@@ -296,7 +299,7 @@ fun GroupDetailsScreen(
                                     onValueChange = {
                                         groupNameTextField.value = it
                                         infoChanged = true
-                                                    },
+                                    },
                                     label = { Text("Name") },
                                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                     modifier = Modifier
@@ -314,7 +317,7 @@ fun GroupDetailsScreen(
                                     onValueChange = {
                                         groupDescriptionTextField.value = it
                                         infoChanged = true
-                                                    },
+                                    },
                                     label = { Text("Description") },
                                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                     modifier = Modifier
@@ -335,7 +338,11 @@ fun GroupDetailsScreen(
                                             }
                                             if (infoChanged) {
                                                 if (groupId != null) {
-                                                    viewModel.modifyGroup(groupId = groupId, name = groupNameTextField.value, description = groupDescriptionTextField.value )
+                                                    viewModel.modifyGroup(
+                                                        groupId = groupId,
+                                                        name = groupNameTextField.value,
+                                                        description = groupDescriptionTextField.value
+                                                    )
                                                 }
                                             }
                                         }
@@ -708,9 +715,9 @@ fun DisplayGroupMessages(
     ) {
         if (groupMessages != null) {
             val lazyColumnState = rememberLazyListState()
-
             LazyColumn(
                 state = lazyColumnState,
+                reverseLayout = true,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
@@ -755,13 +762,17 @@ fun DisplayGroupMessages(
                 }
             }
 
-            LaunchedEffect(key1 = groupMessages) {
-                lazyColumnState.animateScrollToItem(groupMessages.size - 1)
+            LaunchedEffect(groupMessages) {
+                if (groupMessages.isNotEmpty()) {
+                    lazyColumnState.animateScrollToItem(0)
+                }
             }
         }
 
         // Input and send message button
-        Row {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             TextField(
                 value = groupMessageTextValue,
                 onValueChange = { groupMessageTextValue = it },
@@ -1113,7 +1124,6 @@ fun BottomSheetAddExpense(
                                 expenseType = expenseType.value,
                                 userAmountsList = expenseListFinal
                             )
-
 
 
                             //if (viewModel.addUserExpenseResponse?.value.

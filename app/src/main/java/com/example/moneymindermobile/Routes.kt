@@ -10,4 +10,5 @@ object Routes {
     const val USER_STATS = "userStats"
     const val GROUP_STATS = "groupStats"
     const val USER_PAYMENT = "userPayments"
+    const val PRIVATE_MESSAGE = "privateMessage"
 }

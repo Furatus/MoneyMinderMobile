@@ -20,6 +20,7 @@ import com.example.moneymindermobile.ui.screens.GroupDetailsScreen
 import com.example.moneymindermobile.ui.screens.GroupStatsDetailScreen
 import com.example.moneymindermobile.ui.screens.HomeScreen
 import com.example.moneymindermobile.ui.screens.LoginScreen
+import com.example.moneymindermobile.ui.screens.PrivateMessageScreen
 import com.example.moneymindermobile.ui.screens.RegistrationScreen
 import com.example.moneymindermobile.ui.screens.StatsScreen
 import com.example.moneymindermobile.ui.screens.UserDetailsScreen
@@ -84,7 +85,11 @@ class MainActivity : ComponentActivity() {
                         composable("${Routes.EXPENSE_DETAILS}/{expenseId}") { navBackStackEntry ->
                             viewModel.refreshGraphQlError()
                             val expense = navBackStackEntry.arguments?.getString("expenseId")
-                            ExpenseDetailScreen(expenseId = expense, viewModel = viewModel, navController = navController)
+                            ExpenseDetailScreen(
+                                expenseId = expense,
+                                viewModel = viewModel,
+                                navController = navController
+                            )
                         }
                         composable("${Routes.USER_DETAILS}/{userId}") { navBackStackEntry ->
                             viewModel.refreshGraphQlError()
@@ -96,18 +101,31 @@ class MainActivity : ComponentActivity() {
                                 navController = navController
                             )
                         }
-                        composable(Routes.USER_STATS){
+                        composable(Routes.USER_STATS) {
                             viewModel.refreshGraphQlError()
                             StatsScreen(viewModel = viewModel, navController = navController)
                         }
-                        composable("${Routes.GROUP_STATS}/{groupId}") {navBackStackEntry ->
+                        composable("${Routes.GROUP_STATS}/{groupId}") { navBackStackEntry ->
                             viewModel.refreshGraphQlError()
                             val groupId = navBackStackEntry.arguments?.getString("groupId")
-                            GroupStatsDetailScreen(viewModel = viewModel, navController = navController, groupId = groupId)
+                            GroupStatsDetailScreen(
+                                viewModel = viewModel,
+                                navController = navController,
+                                groupId = groupId
+                            )
                         }
                         composable(Routes.USER_PAYMENT) {
                             viewModel.refreshGraphQlError()
                             UserPaymentScreen(viewModel = viewModel, navController = navController)
+                        }
+                        composable("${Routes.PRIVATE_MESSAGE}/{otherUserId}") { navBackStackEntry ->
+                            viewModel.refreshGraphQlError()
+                            val otherUserId = navBackStackEntry.arguments?.getString("otherUserId")
+                            PrivateMessageScreen(
+                                otherUserId = otherUserId,
+                                viewModel = viewModel,
+                                navController = navController
+                            )
                         }
                     }
                 }

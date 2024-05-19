@@ -6,6 +6,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -13,19 +14,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.outlined.Face
+import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.MailOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -56,6 +62,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.CurrentUserQuery
+import com.example.GetFriendsQuery
+import com.example.GetUsersByUsernameQuery
 import com.example.moneymindermobile.Routes
 import com.example.moneymindermobile.data.MainViewModel
 import com.example.moneymindermobile.ui.components.CurrentUserCard
@@ -67,6 +75,8 @@ import kotlinx.coroutines.launch
 fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
     val firstFetchDone by rememberSaveable { mutableStateOf(false) }
     val currentUserState by viewModel.currentUserResponse.collectAsState()
+    val users by viewModel.getUsersByUsernameResponse.collectAsState()
+    val getFriendsState by viewModel.getFriendsResponse.collectAsState()
     val graphQlErrors by viewModel.graphQlError.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val refreshTrigger = rememberSaveable { mutableStateOf(0) }
@@ -92,7 +102,9 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
         } else {
             Column {
                 CurrentUserCard(
-                    currentUserQueryData = currentUserState, viewModel = viewModel, navController = navController
+                    currentUserQueryData = currentUserState,
+                    viewModel = viewModel,
+                    navController = navController
                 )
                 val tabItems = listOf(
                     TabItem(
@@ -103,6 +115,10 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
                         title = "Invitations",
                         unselectedIcon = Icons.Outlined.MailOutline,
                         selectedIcon = Icons.Filled.Email
+                    ), TabItem(
+                        title = "Private Messages",
+                        unselectedIcon = Icons.Outlined.List,
+                        selectedIcon = Icons.Filled.List
                     )
                 )
 
@@ -196,6 +212,26 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
                                 )
                             }
                         }
+                        if (index == 2) {
+                            viewModel.getFriends()
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "Your private messages",
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(8.dp)
+                                )
+                                DisplayFriends(
+                                    getFriendsState = getFriendsState,
+                                    navController = navController,
+                                    users = users,
+                                    currentUserId = currentUserState?.currentUser?.id.toString(),
+                                    viewModel = viewModel
+                                )
+                            }
+                        }
                     }
 
                 }
@@ -208,7 +244,10 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
                     showDialog = false
                 }) {
                     val keyboardController = LocalSoftwareKeyboardController.current
-                    Column( modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         TextField(
                             value = createGroupName,
                             leadingIcon = {
@@ -283,6 +322,137 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
             }
         }
 
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DisplayFriends(
+    getFriendsState: GetFriendsQuery.Data?,
+    navController: NavHostController,
+    users: GetUsersByUsernameQuery.Data?,
+    currentUserId: String? = null,
+    viewModel: MainViewModel
+) {
+    val friends = getFriendsState?.friends
+    var isAddNewMessageFriend by remember { mutableStateOf(false) }
+    if (friends != null) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+                .padding(5.dp)
+        ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxHeight()
+            ) {
+                items(friends) { friend ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                            .clickable {
+                                navController.navigate("${Routes.PRIVATE_MESSAGE}/${friend.id}")
+                            }
+                    ) {
+                        Column {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(8.dp)
+                            ) {
+                                EntityImage(
+                                    imageLink = friend.avatarUrl,
+                                    title = friend.userName
+                                )
+                                friend.userName?.let {
+                                    Text(
+                                        text = it,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Button(
+                onClick = { isAddNewMessageFriend = true },
+                modifier = Modifier
+                    .size(50.dp)
+                    .align(Alignment.BottomCenter),
+                contentPadding = PaddingValues(1.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = "Add Expense"
+                )
+            }
+        }
+    }
+    if (isAddNewMessageFriend) {
+        ModalBottomSheet(onDismissRequest = { isAddNewMessageFriend = false }) {
+            val userNameSearchValue = rememberSaveable { mutableStateOf("") }
+            LaunchedEffect(userNameSearchValue.value) {
+                viewModel.getUsersByUsername(userNameSearchValue.value)
+            }
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                TextField(
+                    value = userNameSearchValue.value,
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Outlined.Face,
+                            contentDescription = "User Name Search Icon"
+                        )
+                    },
+                    onValueChange = { userNameSearchValue.value = it },
+                    label = { Text("User Name") },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                )
+                Text(text = "Add new message to:")
+                val usersWithoutCurrentUser = users?.users?.filter { it.id != currentUserId }
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(usersWithoutCurrentUser ?: listOf()) { user ->
+                        Card(
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .clickable {
+                                    navController.navigate("${Routes.PRIVATE_MESSAGE}/${user.id}")
+                                    isAddNewMessageFriend = false
+                                }
+                        ) {
+                            Column {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(8.dp)
+                                ) {
+                                    EntityImage(
+                                        imageLink = user.avatarUrl,
+                                        title = user.userName
+                                    )
+                                    user.userName?.let {
+                                        Text(
+                                            text = it,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(start = 8.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

@@ -1,0 +1,34 @@
+query GetFriends{
+    friends{
+        id
+        userName
+        avatarUrl
+    }
+}
+
+query GetMessageByOtherId($otherId: UUID!){
+    messagesByOtherUserId(otherUserId: $otherId, order: {sentAt: DESC}){
+        id
+        content
+        sentAt
+        sender {
+            id
+            userName
+            avatarUrl
+        }
+        receiver {
+            id
+            userName
+            avatarUrl
+        }
+    }
+}
+
+mutation SendPrivateMessage($otherId: UUID!, $content: String!){
+    sendMessage(messageInsertInput: {
+        content: $content
+        receiverId: $otherId
+    }){
+        sentAt
+    }
+}

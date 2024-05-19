@@ -1,0 +1,8 @@
+mutation SendGroupMessage($groupId: UUID!, $content:String!){
+    sendGroupMessage(groupMessageInsertInput: {
+        groupId: $groupId,
+        content: $content
+    }){
+        id
+    }
+}

@@ -14,13 +14,17 @@ import com.example.CreateGroupMutation
 import com.example.CreateUserMutation
 import com.example.CurrentUserQuery
 import com.example.ExpenseJustificationMutation
+import com.example.GetFriendsQuery
 import com.example.GetGroupByIdQuery
+import com.example.GetMessageByOtherIdQuery
 import com.example.GetUserDetailsByIdQuery
 import com.example.GetUsersByUsernameQuery
 import com.example.GroupPdfSumUpMutation
 import com.example.InviteUserMutation
 import com.example.PayDuesToGroupMutation
 import com.example.RefuseInvitationMutation
+import com.example.SendGroupMessageMutation
+import com.example.SendPrivateMessageMutation
 import com.example.SignInMutation
 import com.example.SignOutMutation
 import com.example.UploadExpenseJustificationMutation
@@ -108,6 +112,11 @@ class MainViewModel(
         MutableStateFlow(null)
     val addUserExpenseResponse: StateFlow<AddUserExpenseMutation.Data?> = _addUserExpenseResponse
 
+    private val _getMessageByOtherIdResponse: MutableStateFlow<GetMessageByOtherIdQuery.Data?> =
+        MutableStateFlow(null)
+    val getMessageByOtherIdResponse: StateFlow<GetMessageByOtherIdQuery.Data?> =
+        _getMessageByOtherIdResponse
+
     //Upload image group
     private val _uploadGroupPictureResponse: MutableStateFlow<UploadGroupImagePictureMutation.Data?> =
         MutableStateFlow(null)
@@ -115,6 +124,9 @@ class MainViewModel(
 
     private val _expenseJustificationArray = MutableStateFlow<ByteArray?>(null)
     var expenseJustificationArray: StateFlow<ByteArray?> = _expenseJustificationArray
+
+    private val _getFriendsResponse = MutableStateFlow<GetFriendsQuery.Data?>(null)
+    val getFriendsResponse: StateFlow<GetFriendsQuery.Data?> = _getFriendsResponse
 
     private val _userInfoResponse: MutableStateFlow<ByteArray?> = MutableStateFlow(null)
     val userInfoResponse = _userInfoResponse
@@ -124,7 +136,6 @@ class MainViewModel(
 
     private val _userRibResponse: MutableStateFlow<ByteArray?> = MutableStateFlow(null)
     val userRibResponse = _userRibResponse
-
     fun refreshGraphQlError() {
         viewModelScope.launch {
             _graphQlError.value = emptyList()
@@ -714,7 +725,7 @@ class MainViewModel(
         }
     }
 
-    fun uploadUserRib(bankDetailsByteArray : ByteArray) {
+    fun uploadUserRib(bankDetailsByteArray: ByteArray) {
         val fileExtension = determineFileExtension(bankDetailsByteArray)
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -793,7 +804,7 @@ class MainViewModel(
         }
     }
 
-    fun userRib (userId : String) {
+    fun userRib(userId: String) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -839,4 +850,63 @@ class MainViewModel(
         }
     }
 
+    fun sendMessageToGroup(groupId: String, content: String) {
+        viewModelScope.launch {
+            println("sending message to group $groupId")
+            try {
+                val response = apolloClient.mutation(
+                    SendGroupMessageMutation(
+                        groupId = groupId,
+                        content = content
+                    )
+                ).execute()
+                _graphQlError.value = response.errors
+            } catch (e: ApolloException) {
+                println(e)
+            }
+        }
+    }
+
+    fun getFriends() {
+        viewModelScope.launch {
+            println("getting friends")
+            try {
+                val response = apolloClient.query(GetFriendsQuery()).execute()
+                _graphQlError.value = response.errors
+                _getFriendsResponse.value = response.data
+            } catch (e: ApolloException) {
+                println(e)
+            }
+        }
+    }
+
+    fun sendPrivateMessage(otherUserId: String, content: String) {
+        viewModelScope.launch {
+            println("sending private message to user $otherUserId")
+            try {
+                val response = apolloClient.mutation(
+                    SendPrivateMessageMutation(
+                        otherId = otherUserId,
+                        content = content
+                    )
+                ).execute()
+                _graphQlError.value = response.errors
+            } catch (e: ApolloException) {
+                println(e)
+            }
+        }
+    }
+
+    fun getMessagesByOtherId(userId: String) {
+        viewModelScope.launch {
+            println("getting messages for other id $userId")
+            try {
+                val response = apolloClient.query(GetMessageByOtherIdQuery(userId)).execute()
+                _graphQlError.value = response.errors
+                _getMessageByOtherIdResponse.value = response.data
+            } catch (e: ApolloException) {
+                println(e)
+            }
+        }
+    }
 }

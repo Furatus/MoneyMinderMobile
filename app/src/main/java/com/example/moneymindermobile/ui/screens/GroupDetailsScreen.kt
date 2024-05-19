@@ -1,9 +1,14 @@
 @file:OptIn(
-    ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
-    ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3Api::class,
+    ExperimentalFoundationApi::class,
+    ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3Api::class,
     ExperimentalFoundationApi::class
 )
 
@@ -31,6 +36,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -48,11 +54,13 @@ import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ExitToApp
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.List
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -92,6 +100,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -148,8 +157,16 @@ fun GroupDetailsScreen(
     val scope = rememberCoroutineScope()
 
     currentGroupByIdState.value?.groupById?.name?.let { Log.d("current-group", it) }
-    val groupNameTextField = rememberSaveable { mutableStateOf(currentGroupByIdState.value?.groupById?.name ?: "Default name") }
-    val groupDescriptionTextField = rememberSaveable { mutableStateOf(currentGroupByIdState.value?.groupById?.description ?: "Default description") }
+    val groupNameTextField = rememberSaveable {
+        mutableStateOf(
+            currentGroupByIdState.value?.groupById?.name ?: "Default name"
+        )
+    }
+    val groupDescriptionTextField = rememberSaveable {
+        mutableStateOf(
+            currentGroupByIdState.value?.groupById?.description ?: "Default description"
+        )
+    }
 
     var isGraphOpened by rememberSaveable { mutableStateOf(false) }
 
@@ -162,6 +179,10 @@ fun GroupDetailsScreen(
             title = "Balance",
             unselectedIcon = Icons.Outlined.ArrowForward,
             selectedIcon = Icons.Filled.ArrowForward
+        ), TabItem(
+            title = "Group Messages",
+            unselectedIcon = Icons.Outlined.List,
+            selectedIcon = Icons.Filled.List
         )
     )
 
@@ -208,8 +229,7 @@ fun GroupDetailsScreen(
                                     onClick = {
                                         isChangingPicture = true
                                         imageByteArray = byteArrayOf()
-                                    },
-                                    modifier = Modifier
+                                    }, modifier = Modifier
                                         .size(64.dp)
                                         .padding(0.dp)
                                 ) {
@@ -221,12 +241,11 @@ fun GroupDetailsScreen(
                                         )
                                     } else {
                                         if (groupById.groupImageUrl.isNullOrEmpty()) {
-                                            val bitmapImage =
-                                                imageByteArray?.let {
-                                                    convertImageByteArrayToBitmap(
-                                                        it
-                                                    )
-                                                }
+                                            val bitmapImage = imageByteArray?.let {
+                                                convertImageByteArrayToBitmap(
+                                                    it
+                                                )
+                                            }
 
                                             if (bitmapImage != null) {
                                                 Image(
@@ -286,18 +305,16 @@ fun GroupDetailsScreen(
                                         .padding(8.dp),
                                 )
                                 Button(onClick = {
-                                    scope.launch { sheetStateOptions.hide() }
-                                        .invokeOnCompletion {
-                                            isOptionsSheetOpen = false
-                                            if (imageByteArray?.size != 0 && imageByteArray != null) {
-                                                val group: String = groupId!!
-                                                viewModel.uploadGroupImagePicture(
-                                                    groupId = group,
-                                                    imageByteArray!!
-                                                )
-                                                refreshTrigger.intValue++
-                                            }
+                                    scope.launch { sheetStateOptions.hide() }.invokeOnCompletion {
+                                        isOptionsSheetOpen = false
+                                        if (imageByteArray?.size != 0 && imageByteArray != null) {
+                                            val group: String = groupId!!
+                                            viewModel.uploadGroupImagePicture(
+                                                groupId = group, imageByteArray!!
+                                            )
+                                            refreshTrigger.intValue++
                                         }
+                                    }
                                 }) {
                                     Text(text = "Submit changes")
                                 }
@@ -305,9 +322,7 @@ fun GroupDetailsScreen(
                         } else {
                             FilePickingOrCamera(
                                 fileType = listOf(
-                                    "png",
-                                    "jpg",
-                                    "jpeg"
+                                    "png", "jpg", "jpeg"
                                 )
                             ) { outputByteArray ->
                                 imageByteArray = outputByteArray
@@ -455,9 +470,7 @@ fun GroupDetailsScreen(
                 }
 
                 if (isAddExpenseSheetOpen) BottomSheetAddExpense(
-                    viewModel = viewModel,
-                    groupState = groupById,
-                    scope = scope
+                    viewModel = viewModel, groupState = groupById, scope = scope
                 ) { isDismissed -> isAddExpenseSheetOpen = isDismissed }
 
                 Row {
@@ -535,21 +548,20 @@ fun GroupDetailsScreen(
                                     pagerState.animateScrollToPage(index)
                                 }
                                 selectedTabIndex = index
-                            },
-                                text = {
-                                    Text(text = item.title)
-                                },
-                                icon = {
-                                    Icon(
-                                        imageVector = if (index == selectedTabIndex) item.selectedIcon else item.unselectedIcon,
-                                        contentDescription = "${item.title} Icon"
-                                    )
-                                })
+                            }, text = {
+                                Text(text = item.title)
+                            }, icon = {
+                                Icon(
+                                    imageVector = if (index == selectedTabIndex) item.selectedIcon else item.unselectedIcon,
+                                    contentDescription = "${item.title} Icon"
+                                )
+                            })
                         }
                     }
 
                     HorizontalPager(
-                        state = pagerState, modifier = Modifier
+                        state = pagerState,
+                        modifier = Modifier
                             .fillMaxWidth()
                             .fillMaxHeight()
                             .weight(1f)
@@ -574,8 +586,7 @@ fun GroupDetailsScreen(
 
                                     } else {
                                         ViewExpenses(
-                                            groupState = groupById,
-                                            navController = navController
+                                            groupState = groupById, navController = navController
                                         )
                                     }
                                     Button(
@@ -625,14 +636,31 @@ fun GroupDetailsScreen(
                                             },
                                             title = { Text(text = "Group Balance") },
                                             text = { BalanceGraph(groupById.userGroups) },
-                                            modifier = Modifier
-                                                .padding(8.dp)
+                                            modifier = Modifier.padding(8.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            if (index == 2) {
+                                var groupMessageTextValue by rememberSaveable { mutableStateOf("") }
+                                val groupMessages =
+                                    currentGroupByIdState.value!!.groupById?.receivedGroupMessages
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    if (currentUserId != null) {
+                                        DisplayGroupMessages(
+                                            groupMessages = groupMessages,
+                                            currentUserId = currentUserId,
+                                            viewModel = viewModel,
+                                            groupId = groupById.id.toString()
                                         )
                                     }
                                 }
                             }
                         }
-
                     }
                 }
             }
@@ -641,24 +669,117 @@ fun GroupDetailsScreen(
 }
 
 @Composable
-fun DisplayPayDueTo(payDueTo: GetGroupByIdQuery.PayTo, viewModel: MainViewModel, groupId: String) {
+fun DisplayGroupMessages(
+    groupMessages: List<GetGroupByIdQuery.ReceivedGroupMessage>?,
+    currentUserId: String,
+    viewModel: MainViewModel,
+    groupId: String
+) {
+    var groupMessageTextValue by rememberSaveable { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        if (groupMessages != null) {
+            val lazyColumnState = rememberLazyListState()
+
+            LazyColumn(
+                state = lazyColumnState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                items(groupMessages) { message ->
+                    val isSenderCurrentUser = message.sender.id == currentUserId
+                    val alignment = if (isSenderCurrentUser) Alignment.End else Alignment.Start
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.align(alignment)
+                    ) {
+                        Card(
+                            modifier = Modifier
+                                .padding(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                EntityImage(
+                                    imageLink = message.sender.avatarUrl,
+                                    title = message.sender.userName
+                                )
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = message.sender.userName ?: "Unknown",
+                                        fontWeight = FontWeight.Bold,
+                                        textAlign = TextAlign.End,
+                                    )
+                                    Text(
+                                        text = message.content,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            LaunchedEffect(key1 = groupMessages) {
+                lazyColumnState.animateScrollToItem(groupMessages.size - 1)
+            }
+        }
+
+        // Input and send message button
+        Row {
+            TextField(
+                value = groupMessageTextValue,
+                onValueChange = { groupMessageTextValue = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+                    .weight(1f) // This will make the TextField fill all available space, pushing the Button to the end
+            )
+            Button(onClick = {
+                viewModel.sendMessageToGroup(
+                    groupId = groupId,
+                    content = groupMessageTextValue
+                )
+                groupMessageTextValue = ""
+            }) {
+                Image(
+                    imageVector = Icons.Filled.Send,
+                    contentDescription = "Send message"
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DisplayPayDueTo(
+    payDueTo: GetGroupByIdQuery.PayTo,
+    viewModel: MainViewModel,
+    groupId: String
+) {
     val context = LocalContext.current
     Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (payDueTo.payToUser != null) {
             Text(text = "⚠\uFE0F You owe ${payDueTo.amountToPay} € to ${payDueTo.payToUser.userName}")
             Button(onClick = {
                 viewModel.OpenPaymentUrlIfNeeded(
-                    groupId = groupId,
-                    context = context
+                    groupId = groupId, context = context
                 )
             }) {
                 Text(text = "Pay now")
             }
-        } else
-            Text(text = "✅ You don't owe anything to anyone")
+        } else Text(text = "✅ You don't owe anything to anyone")
     }
 }
 
@@ -669,11 +790,9 @@ fun BalanceGraph(userGroups: List<GetGroupByIdQuery.UserGroup>) {
     }
 
     val barDataSet = BarDataSet(entries, "Balances")
-    barDataSet.setColors(
-        userGroups.map { userGroup ->
-            if (userGroup.balance < 0) Color.Red.toArgb() else Color.Green.toArgb()
-        }
-    )
+    barDataSet.colors = userGroups.map { userGroup ->
+        if (userGroup.balance < 0) Color.Red.toArgb() else Color.Green.toArgb()
+    }
 
     val barData = BarData(barDataSet)
     barData.barWidth = 0.5f
@@ -681,14 +800,12 @@ fun BalanceGraph(userGroups: List<GetGroupByIdQuery.UserGroup>) {
     val selectedUserName = remember { mutableStateOf("") }
 
     Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp),
-            contentAlignment = Alignment.Center
+                .height(50.dp), contentAlignment = Alignment.Center
         ) {
             if (selectedUserName.value != "") {
                 Text(text = selectedUserName.value)
@@ -771,7 +888,8 @@ fun LazyRowOfMembers(
 
 @Composable
 fun UserToInviteCard(
-    toInvite: GetUsersByUsernameQuery.User, onMemberClicked: (GetUsersByUsernameQuery.User) -> Unit
+    toInvite: GetUsersByUsernameQuery.User,
+    onMemberClicked: (GetUsersByUsernameQuery.User) -> Unit
 ) {
     Card(modifier = Modifier
         .padding(8.dp)
@@ -832,8 +950,7 @@ fun BottomSheetAddExpense(
     )
 
     ModalBottomSheet(
-        onDismissRequest = { onSheetDismissed(false) },
-        sheetState = sheetStateAddExpense
+        onDismissRequest = { onSheetDismissed(false) }, sheetState = sheetStateAddExpense
     ) {
         var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
         val pagerState = rememberPagerState(pageCount = { tabItems.size })
@@ -851,22 +968,19 @@ fun BottomSheetAddExpense(
                         pagerState.animateScrollToPage(index)
                     }
                     selectedTabIndex = index
-                },
-                    text = {
-                        Text(text = item.title)
-                    },
-                    icon = {
-                        Icon(
-                            imageVector = if (index == selectedTabIndex) item.selectedIcon else item.unselectedIcon,
-                            contentDescription = "${item.title} Icon"
-                        )
-                    })
+                }, text = {
+                    Text(text = item.title)
+                }, icon = {
+                    Icon(
+                        imageVector = if (index == selectedTabIndex) item.selectedIcon else item.unselectedIcon,
+                        contentDescription = "${item.title} Icon"
+                    )
+                })
             }
         }
 
         HorizontalPager(
-            state = pagerState, modifier = Modifier
-                .fillMaxWidth()
+            state = pagerState, modifier = Modifier.fillMaxWidth()
         ) { index ->
             run {
                 if (index == 0) {
@@ -894,7 +1008,7 @@ fun BottomSheetAddExpense(
                             onValueChange = {
                                 expenseTitleTextField.value = it
                                 isSubmitEnabled =
-                                    if (expenseTitleTextField.value != "" && expenseAmountField.value.toFloatOrNull() != null) true else false
+                                    expenseTitleTextField.value != "" && expenseAmountField.value.toFloatOrNull() != null
                             },
                             label = { Text("Description") },
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -914,7 +1028,7 @@ fun BottomSheetAddExpense(
                             onValueChange = {
                                 expenseAmountField.value = it
                                 isSubmitEnabled =
-                                    if (expenseTitleTextField.value != "" && expenseAmountField.value.toFloatOrNull() != null) true else false
+                                    expenseTitleTextField.value != "" && expenseAmountField.value.toFloatOrNull() != null
                             },
                             label = { Text("Total Amount") },
                             keyboardOptions = KeyboardOptions(
@@ -935,21 +1049,17 @@ fun BottomSheetAddExpense(
                         ) {
                             Text(text = "Expense Type", modifier = Modifier.padding(8.dp))
                             ExpenseType.entries.forEach { type ->
-                                if (type != ExpenseType.UNKNOWN__)
-                                    LazyRow(
-                                        modifier = Modifier
-                                            .align(Alignment.Start)
-                                    ) {
-                                        items(listOf(type)) { type ->
-                                            Checkbox(
-                                                checked = expenseType.value == type,
-                                                onCheckedChange = {
-                                                    expenseType.value = type
-                                                }
-                                            )
-                                            Text(text = type.name)
-                                        }
+                                if (type != ExpenseType.UNKNOWN__) LazyRow(
+                                    modifier = Modifier.align(Alignment.Start)
+                                ) {
+                                    items(listOf(type)) { type ->
+                                        Checkbox(checked = expenseType.value == type,
+                                            onCheckedChange = {
+                                                expenseType.value = type
+                                            })
+                                        Text(text = type.name)
                                     }
+                                }
                             }
                         }
 
@@ -959,8 +1069,7 @@ fun BottomSheetAddExpense(
                             emptyList()
                         var userlist: List<Boolean> = emptyList()
 
-                        AddExpenseUserList(
-                            groupState = groupState,
+                        AddExpenseUserList(groupState = groupState,
                             expenseDetailsList = { list -> expenseList = list },
                             userlist = { list -> userlist = list })
                         Button(onClick = {
@@ -971,14 +1080,13 @@ fun BottomSheetAddExpense(
                                 onSheetDismissed(false)
                             }
 
-                             viewModel.addUserExpense(
+                            viewModel.addUserExpense(
                                 amount = expenseAmountField.value.toFloat(),
                                 description = expenseTitleTextField.value,
                                 groupId = groupState.id.toString(),
                                 expenseType = expenseType.value,
                                 userAmountsList = expenseListFinal
                             )
-
 
 
                             //if (viewModel.addUserExpenseResponse?.value.
@@ -994,10 +1102,7 @@ fun BottomSheetAddExpense(
                         Spacer(modifier = Modifier.padding(8.dp))
                         FilePickingOrCamera(
                             listOf(
-                                "jpg",
-                                "jpeg",
-                                "png",
-                                "pdf"
+                                "jpg", "jpeg", "png", "pdf"
                             )
                         ) { outputArray ->
                             byteArrayJustification = outputArray
@@ -1007,12 +1112,11 @@ fun BottomSheetAddExpense(
                                     byteArrayJustification!!
                                 ) == "png"
                             ) {
-                                val bitmapImage =
-                                    byteArrayJustification?.let {
-                                        convertImageByteArrayToBitmap(
-                                            it
-                                        )
-                                    }
+                                val bitmapImage = byteArrayJustification?.let {
+                                    convertImageByteArrayToBitmap(
+                                        it
+                                    )
+                                }
                                 if (bitmapImage != null) {
                                     Spacer(modifier = Modifier.padding(8.dp))
                                     Image(
@@ -1028,13 +1132,10 @@ fun BottomSheetAddExpense(
                                         convertByteArrayToBase64(
                                             byteArrayJustification!!
                                         )
-                                    ),
-                                    isZoomEnable = true
+                                    ), isZoomEnable = true
                                 )
                                 VerticalPDFReader(
-                                    state = pdfState,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
+                                    state = pdfState, modifier = Modifier.fillMaxWidth()
                                 )
                             }
                         }
@@ -1068,8 +1169,7 @@ fun AddExpenseUserList(
                 repeat(members.size) { index ->
                     add(
                         KeyValuePairOfGuidAndNullableOfDecimalInput(
-                            key = members[index].user.id,
-                            value = Optional.present(null)
+                            key = members[index].user.id, value = Optional.present(null)
                         )
                     )
                 }
@@ -1088,7 +1188,10 @@ fun AddExpenseUserList(
             //val currentValue = expenseList.getOrNull(index)?.value?.toString() ?: ""
             //var amountUserInput by rememberSaveable { mutableStateOf(currentValue) }
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
                 Card {
                     Column {
                         Row(
@@ -1096,8 +1199,7 @@ fun AddExpenseUserList(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             EntityImage(
-                                imageLink = member.user.avatarUrl,
-                                title = member.user.userName
+                                imageLink = member.user.avatarUrl, title = member.user.userName
                             )
                             member.user.userName?.let { Text(text = it) }
                             //Text(text = "${index}")
@@ -1113,17 +1215,18 @@ fun AddExpenseUserList(
                         }
                         Row {
                             TextField(
-                                value = amountUserInput, onValueChange = {
+                                value = amountUserInput,
+                                onValueChange = {
                                     amountUserInput = it
                                     //Log.d("exp", "${it.toIntOrNull()}")
                                     updatedExpenseList.set(
                                         index = index,
                                         element = KeyValuePairOfGuidAndNullableOfDecimalInput(
-                                            member.user.id,
-                                            Optional.present(it.toFloatOrNull())
+                                            member.user.id, Optional.present(it.toFloatOrNull())
                                         )
                                     )
-                                }, modifier = Modifier.fillMaxWidth(),
+                                },
+                                modifier = Modifier.fillMaxWidth(),
                                 keyboardOptions = KeyboardOptions(
                                     imeAction = ImeAction.Done,
                                     autoCorrect = false,
@@ -1149,13 +1252,11 @@ fun ViewExpenses(groupState: GetGroupByIdQuery.GroupById, navController: NavHost
 
     LazyColumn(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center) {
         items(groupState.expenses) { item ->
-            Card(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .height(80.dp), onClick = {
-                    navController.navigate("${Routes.EXPENSE_DETAILS}/${item.id}")
-                }
-            ) {
+            Card(modifier = Modifier
+                .padding(8.dp)
+                .height(80.dp), onClick = {
+                navController.navigate("${Routes.EXPENSE_DETAILS}/${item.id}")
+            }) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1174,7 +1275,10 @@ fun ViewExpenses(groupState: GetGroupByIdQuery.GroupById, navController: NavHost
                             fontSize = 12.sp
                         )
                     }
-                    Text(text = "${item.amount} €", modifier = Modifier.align(Alignment.CenterEnd))
+                    Text(
+                        text = "${item.amount} €",
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    )
                 }
             }
         }
@@ -1195,8 +1299,7 @@ fun convertByteArrayToBase64(byteArray: ByteArray): String {
 }
 
 fun matchListUserAndExpenses(
-    userList: List<Boolean>,
-    expenseList: List<KeyValuePairOfGuidAndNullableOfDecimalInput>
+    userList: List<Boolean>, expenseList: List<KeyValuePairOfGuidAndNullableOfDecimalInput>
 ): List<KeyValuePairOfGuidAndNullableOfDecimalInput> {
     val matchedList = mutableListOf<KeyValuePairOfGuidAndNullableOfDecimalInput>()
 
@@ -1209,8 +1312,7 @@ fun matchListUserAndExpenses(
             val expense = expenseList.getOrNull(i)
             matchedList.add(
                 expense ?: KeyValuePairOfGuidAndNullableOfDecimalInput(
-                    key = Any(),
-                    value = Optional.Absent
+                    key = Any(), value = Optional.Absent
                 )
             )
         }

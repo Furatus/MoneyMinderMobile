@@ -51,5 +51,15 @@ query GetGroupById($groupId:UUID!){
                 }
             }
         }
+        receivedGroupMessages {
+            id
+            content
+            sender {
+                id
+                userName
+                avatarUrl
+            }
+            sentAt
+        }
     }
 }

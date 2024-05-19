@@ -171,6 +171,7 @@ type Mutation {
     groupPdfSumUp(groupId: UUID!): String!
     modifyGroup(groupModifyDto: GroupModifyDtoInput!): Group
     payDuesToGroup(groupId: UUID!): String!
+    manuallyValidatePayment(payerId: UUID!, groupId: UUID!): Decimal!
     sendMessage(messageInsertInput: MessageInsertInput!): Message
     sendGroupMessage(
         groupMessageInsertInput: GroupMessageInsertInput!
